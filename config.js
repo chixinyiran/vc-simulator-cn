@@ -95,7 +95,7 @@ const CONFIG = {
     btnStart:      '开始游戏',
     btnContinue:   '⏎ 继续上次',
     btnViewLast:   '📊 查看上次战绩',
-    btnRestart:    '回首页重新开始',
+    btnRestart:    '重新开始',
     confirmRestart:'确定放弃当前进度，回到首页重新开始吗？',
     musicTipNeed:  '点右上角🔇可开启时代背景音乐',
     scrollHint:    '↓ 下滑了解玩法',
