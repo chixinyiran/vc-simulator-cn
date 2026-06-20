@@ -396,6 +396,11 @@ function showChoices(){
     <div class="deals">${cards}</div>
     <div class="center-btn"><button class="btn" id="confirmBtn" disabled onclick="confirmDeal()">请选择一个项目</button></div>`;
   window.scrollTo({top:0,behavior:'smooth'});
+  // 返回上一站时,恢复之前选中的项目高亮
+  if(typeof preselectIdx==='number' && preselectIdx>=0){
+    const card=document.querySelector('.deal[data-i="'+preselectIdx+'"]');
+    if(card && !card.classList.contains('locked')) pickDeal(preselectIdx);
+  }
 }
 function pickDeal(i){
   selDeal=i;
@@ -434,7 +439,9 @@ function undoStaged(){
   const last=stagedThisPeriod.pop();
   const tm=TREND_MBTI[last.deal.trend]; if(tm){for(const k in tm)mbti[k]-=tm[k];}
   selDeal=null; saveProgress();
-  showChoices();
+  const r=GAME.periods[pIdx].rounds[rIdx];
+  const prevIdx=r.deals.findIndex(x=>x===last.deal);
+  showChoices(prevIdx);
 }
 function advance(){
   const p=GAME.periods[pIdx];
