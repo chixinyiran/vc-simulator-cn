@@ -137,7 +137,7 @@ function continueGame(){
   document.getElementById('ending').innerHTML='';
   document.getElementById('game').classList.remove('hidden');
   renderTop(); renderStats(true);
-  Music.setPeriod(pIdx);
+  maybeStartMusic();
   applyPeriodTheme(pIdx);
   showStory();
 }
@@ -237,7 +237,7 @@ function startGame(){
 function goHome(){
   // 回到首页(封面+介绍)，清掉中途进度，让玩家从首页重新进入
   clearProgress(); resetTheme(); gameOver=false;
-  Music.setPeriod && Music.setPeriod(0);
+  stopMusic();
   document.getElementById('game').classList.add('hidden');
   document.getElementById('ending').classList.add('hidden');
   document.getElementById('ending').innerHTML='';
@@ -272,7 +272,7 @@ function globalRoundIndex(){let n=0;for(let i=0;i<pIdx;i++)n+=GAME.periods[i].ro
 function totalRounds(){let n=0;GAME.periods.forEach(p=>n+=p.rounds.length);return n;}
 
 function showPeriodIntro(){
-  Music.setPeriod(pIdx);
+  maybeStartMusic();
   applyPeriodTheme(pIdx);
   const p=GAME.periods[pIdx];
   document.getElementById('game').classList.add('hidden');
@@ -288,7 +288,7 @@ function showPeriodIntro(){
 }
 function enterPeriod(){
   saveProgress();
-  Music.setPeriod(pIdx);
+  maybeStartMusic();
   applyPeriodTheme(pIdx);
   document.getElementById('periodIntro').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
@@ -556,6 +556,7 @@ function pickEnding(score,healthDead){
 function showEnding(healthDead){
   gameOver=true;
   resetTheme();
+  stopMusic();
   const score=calcScore();
   const meta=pickEnding(score,healthDead);
   document.getElementById('game').classList.add('hidden');
@@ -660,30 +661,33 @@ function copyLink(){
 }
 initCover();
 
-// ===== 默认开启背景音乐(首次用户交互时启动,绕过浏览器自动播放限制) =====
+// ===== 音乐：仅在游戏过程中(第一章起)播放，首页/结局静音 =====
+// 加载时只显示开关按钮，不在首页发声。进时代时由 maybeStartMusic 触发。
 (function(){
-  if(!CONFIG.music.enabled) return;  // 音乐总开关关闭时直接跳过
-  document.getElementById('musicBtn').style.display='flex';
-  // 偏好：用户手动关过则记 '0'，手动开过记 '1'，没动过则跟随 CONFIG.music.defaultOn
-  const pref=lsGet(CONFIG.storage.music);
-  const wantOn = (pref===null||pref===undefined) ? CONFIG.music.defaultOn : (pref==1||pref===1);
-  if(!wantOn) return;
-  // 预置按钮为"将要开启"的视觉(显示🎵),真正发声等首次交互
-  const btn=document.getElementById('musicBtn');
-  let started=false;
-  function kickoff(){
-    if(started) return; started=true;
-    if(!Music.isOn()){
-      const isOn=Music.toggle(typeof pIdx==='number'?pIdx:0);
-      btn.textContent=isOn?'🎵':'🔇';
-      btn.classList.toggle('on',isOn);
-    }
-    document.removeEventListener('pointerdown',kickoff);
-    document.removeEventListener('keydown',kickoff);
-  }
-  document.addEventListener('pointerdown',kickoff);
-  document.addEventListener('keydown',kickoff);
+  if(CONFIG.music.enabled){ document.getElementById('musicBtn').style.display='flex'; }
 })();
+// 进入游戏时段调用：若偏好为开则启动当前时代音乐
+function maybeStartMusic(){
+  if(!CONFIG.music.enabled) return;
+  const pref=lsGet(CONFIG.storage.music);
+  const wantOn=(pref===null||pref===undefined)?CONFIG.music.defaultOn:(pref==1||pref===1);
+  if(!wantOn) return;
+  if(!Music.isOn()){
+    Music.toggle(typeof pIdx==='number'?pIdx:0);
+    const btn=document.getElementById('musicBtn');
+    btn.textContent='🎵'; btn.classList.add('on');
+  } else {
+    Music.setPeriod(typeof pIdx==='number'?pIdx:0);
+  }
+}
+// 离开游戏(回首页/结局)调用：停音乐
+function stopMusic(){
+  if(Music.isOn()){
+    Music.stop();
+    const btn=document.getElementById('musicBtn');
+    btn.textContent='🔇'; btn.classList.remove('on');
+  }
+}
 </script>
 </body>
 </html>
