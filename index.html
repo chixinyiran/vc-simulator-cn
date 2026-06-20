@@ -11,6 +11,7 @@
 <div class="wrap">
 
   <div id="cover" class="screen">
+    <div class="invite-banner" id="inviteBanner"></div>
     <div class="years" id="coverYears"></div>
     <h1 id="coverH1"></h1>
     <div class="sub" id="coverSub"></div>
@@ -82,6 +83,33 @@ const RESULT_KEY=CONFIG.storage.result;
 const STATS_KEY=CONFIG.storage.stats;
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ===== 玩家身份 + 分享邀请(纯前端) =====
+function getPlayerId(){
+  let id=lsGet(CONFIG.storage.playerId);
+  if(!id){ id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); lsSet(CONFIG.storage.playerId,id); }
+  return id;
+}
+function getPlayerName(){ return lsGet(CONFIG.storage.playerName)||''; }
+function setPlayerName(n){ lsSet(CONFIG.storage.playerName,n); }
+// 解析URL里的邀请人(?ref=ID&n=昵称)
+function getInviter(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const ref=p.get('ref'), n=p.get('n');
+    if(ref && ref!==getPlayerId()){ return {id:ref, name:n?decodeURIComponent(n):'一位投资人'}; }
+  }catch(e){}
+  return null;
+}
+// 生成专属分享链接
+function buildShareLink(){
+  const base=location.href.split('#')[0].split('?')[0];
+  const id=getPlayerId();
+  const nm=getPlayerName();
+  let u=base+'?ref='+encodeURIComponent(id);
+  if(nm) u+='&n='+encodeURIComponent(nm);
+  return u;
+}
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 // 保存中途进度(每进入一站/答题时调用)
 function saveProgress(){
@@ -133,6 +161,11 @@ function initCover(){
   document.getElementById('coverRules').innerHTML=U.coverRules;
   document.getElementById('coverCredit').innerHTML=U.coverCredit;
   document.getElementById('scrollHint').innerHTML=U.scrollHint||'';
+  // 被邀请横幅
+  const inv=getInviter(); const ib=document.getElementById('inviteBanner');
+  if(inv){ ib.innerHTML='🎉 你是被 <b>'+inv.name+'</b> 邀请来的，开启属于你的二十六年吧'; ib.style.display='block'; lsSet('vcsim_invited_by',inv); }
+  else ib.style.display='none';
+  getPlayerId(); // 确保本机有专属ID
   renderIntro();
   const btns=document.getElementById('coverBtns');
   const save=lsGet(SAVE_KEY), result=lsGet(RESULT_KEY), stats=lsGet(STATS_KEY);
@@ -600,8 +633,14 @@ function genImage(){
 }
 function closeImg(){document.getElementById('imgModal').classList.remove('show');}
 function copyLink(){
-  const url=location.href.split('#')[0];
-  const txt=`我在「中国创业投资模拟器」走完了二十六年创投人生，来挑战你的投资判断力 👉 ${url}`;
+  let nm=getPlayerName();
+  if(!nm){
+    const input=prompt('给自己起个投资人名号吧（让朋友知道是谁邀请的，可留空跳过）：','');
+    if(input&&input.trim()){ nm=input.trim().slice(0,12); setPlayerName(nm); }
+  }
+  const url=buildShareLink();
+  const who=nm?nm+'（我）':'我';
+  const txt=`${who}在「中国创业投资模拟器」走完了二十六年创投人生，来挑战你的投资判断力，看看你能不能超过我 👉 ${url}`;
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast('链接+文案已复制，去粘贴分享吧'),()=>fb(txt));}
   else fb(txt);
   function fb(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('链接+文案已复制，去粘贴分享吧');}catch(e){toast('请手动复制地址栏链接');}ta.remove();}

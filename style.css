@@ -251,3 +251,10 @@
   .ic-title{font-size:18px;}
   .ic-text{font-size:13.5px;}
 }
+
+
+/* ===== 被邀请横幅 ===== */
+.invite-banner{display:none;background:var(--card);border:1px solid var(--accent,#b8860b);
+  border-radius:6px;padding:11px 18px;font-size:13.5px;color:var(--ink-soft);
+  margin-bottom:24px;max-width:420px;line-height:1.7;animation:fade .6s ease;}
+.invite-banner b{color:var(--accent,#b8860b);font-weight:800;}

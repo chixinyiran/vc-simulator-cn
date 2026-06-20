@@ -66,10 +66,12 @@ const CONFIG = {
 
   // === 本地存档键名 ===
   storage: {
-    save:   '***',     // 中途进度
-    result: '***',   // 上次结果
-    stats:  '***',     // 历史统计
-    music:  '***',     // 音乐偏好
+    save:   'vcsim_save_v1',      // 中途进度
+    result: 'vcsim_result_v1',   // 上次结果
+    stats:  'vcsim_stats_v1',     // 历史统计
+    music:  'vcsim_music_v1',     // 音乐偏好
+    playerId: 'vcsim_pid_v1',     // 本机玩家专属ID
+    playerName:'vcsim_pname_v1',  // 本机玩家昵称
   },
 
   // === 音乐参数 ===
