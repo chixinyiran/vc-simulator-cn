@@ -52,7 +52,7 @@
 
   <div id="ending" class="screen hidden"></div>
   <div class="img-modal" id="imgModal"><span class="close-x" onclick="closeImg()">×</span><div class="tip" id="imgTip"></div><img id="imgOut"/></div>
-  <div class="music-btn" id="musicBtn" onclick="toggleMusic()" title="背景音乐">🔇</div>
+  <div class="music-btn" id="musicBtn" onclick="toggleMusic()" title="背景音乐" style="display:none">🔇</div>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -649,6 +649,8 @@ initCover();
 
 // ===== 默认开启背景音乐(首次用户交互时启动,绕过浏览器自动播放限制) =====
 (function(){
+  if(!CONFIG.music.enabled) return;  // 音乐总开关关闭时直接跳过
+  document.getElementById('musicBtn').style.display='flex';
   // 偏好：用户手动关过则记 '0'，手动开过记 '1'，没动过则跟随 CONFIG.music.defaultOn
   const pref=lsGet(CONFIG.storage.music);
   const wantOn = (pref===null||pref===undefined) ? CONFIG.music.defaultOn : (pref==1||pref===1);
