@@ -21,7 +21,7 @@
   .hidden{display:none!important;}
 
   /* 封面 */
-  #cover{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;}
+  #cover{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;box-sizing:border-box;}
   body:has(#cover:not(.hidden)) .wrap{padding-bottom:0;}
   #cover .years{letter-spacing:.5em;font-size:13px;color:var(--ink-faint);margin:40px 0 34px;font-weight:600;}
   #cover h1{font-family:"Kaiti SC","STKaiti","Songti SC",serif;font-weight:900;font-size:clamp(48px,13vw,92px);line-height:1.12;letter-spacing:.04em;margin-bottom:32px;}
