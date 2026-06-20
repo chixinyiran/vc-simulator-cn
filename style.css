@@ -88,13 +88,13 @@
   .cover-stats{margin-top:26px;font-size:12px;color:var(--ink-faint);line-height:1.9;letter-spacing:.03em;}
   .cover-stats b{color:var(--ink-soft);font-weight:700;}
   .cover-stats .sep{margin:0 8px;color:var(--line);}
-  /* 音乐开关 */
-  .music-btn{position:fixed;top:16px;right:16px;z-index:150;width:42px;height:42px;border-radius:50%;
-    background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
-    font-size:19px;cursor:pointer;box-shadow:0 2px 10px rgba(26,23,20,.1);transition:all .2s ease;user-select:none;}
-  .music-btn:hover{transform:scale(1.08);border-color:var(--ink);}
-  .music-btn:active{transform:scale(.94);}
-  .music-btn.on{background:var(--ink);}
+  /* 音乐开关 - 低调小图标融入右上角 */
+  .music-btn{position:fixed;top:12px;right:14px;z-index:150;width:24px;height:24px;
+    background:transparent;border:none;display:flex;align-items:center;justify-content:center;
+    font-size:15px;cursor:pointer;opacity:.35;transition:opacity .25s ease;user-select:none;line-height:1;}
+  .music-btn:hover{opacity:.85;}
+  .music-btn:active{opacity:1;}
+  .music-btn.on{opacity:.6;}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:6px;}
   .topbar .left{display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap;}
   .topbar .period-tag{background:var(--ink);color:var(--paper);padding:2px 9px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.05em;}
