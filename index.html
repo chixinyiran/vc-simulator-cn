@@ -30,23 +30,21 @@
     <div class="period-progress" id="periodProgress"></div>
     <div class="topbar">
       <div class="left">
-        <span class="period-tag" id="periodTag">Ⅰ 门户与泡沫</span>
-        <span class="round-no">第 <b id="roundNo">1</b>/<span id="roundTotal">24</span> 站</span>
+        <span class="era-pill" id="eraPill">互联网泡沫顶点</span>
+        <span class="round-no">第 <b id="roundNo">1</b>/<span id="roundTotal">20</span> 站</span>
         <span class="sep">|</span>
         <span class="year-big" id="yearBig">2000</span>
       </div>
       <div class="right">
-        <span class="era-pill" id="eraPill">互联网泡沫</span>
-        <span class="sep">|</span>
         <span class="title-now" id="titleNow">投资分析师</span>
       </div>
     </div>
     <div class="stats">
-      <div class="stat"><div class="row"><span class="nm">AUM 资本</span><span class="vl"><span id="vAum">40</span><span id="dAum"></span></span></div><div class="bar"><i id="bAum"></i></div></div>
-      <div class="stat"><div class="row"><span class="nm">业绩</span><span class="vl"><span id="vTrack">5</span><span id="dTrack"></span></span></div><div class="bar"><i id="bTrack"></i></div></div>
-      <div class="stat"><div class="row"><span class="nm">人脉</span><span class="vl"><span id="vNet">10</span><span id="dNet"></span></span></div><div class="bar"><i id="bNet"></i></div></div>
-      <div class="stat luck"><div class="row"><span class="nm">运气</span><span class="vl"><span id="vLuck">8</span><span id="dLuck"></span></span></div><div class="bar"><i id="bLuck"></i></div></div>
-      <div class="stat health"><div class="row"><span class="nm">健康</span><span class="vl"><span id="vHealth">90</span><span id="dHealth"></span></span></div><div class="bar"><i id="bHealth"></i></div></div>
+      <div class="stat"><div class="row"><span class="nm">资本 <em>AUM</em></span><span class="vl"><span id="vAum">40</span><span id="dAum"></span></span></div><div class="bar"><i id="bAum"></i></div></div>
+      <div class="stat"><div class="row"><span class="nm">业绩 <em>FAME</em></span><span class="vl"><span id="vTrack">5</span><span id="dTrack"></span></span></div><div class="bar"><i id="bTrack"></i></div></div>
+      <div class="stat"><div class="row"><span class="nm">人脉 <em>NET</em></span><span class="vl"><span id="vNet">10</span><span id="dNet"></span></span></div><div class="bar"><i id="bNet"></i></div></div>
+      <div class="stat luck"><div class="row"><span class="nm">运气 <em>LUCK</em></span><span class="vl"><span id="vLuck">8</span><span id="dLuck"></span></span></div><div class="bar"><i id="bLuck"></i></div></div>
+      <div class="stat health"><div class="row"><span class="nm">健康 <em>HP</em></span><span class="vl"><span id="vHealth">90</span><span id="dHealth"></span></span></div><div class="bar"><i id="bHealth"></i></div></div>
     </div>
     <div id="content"></div>
   </div>
@@ -320,7 +318,6 @@ function pickScenario(i){
 }
 function renderTop(){
   const p=GAME.periods[pIdx], r=p.rounds[rIdx];
-  document.getElementById('periodTag').textContent=p.roman+' '+p.name;
   document.getElementById('roundNo').textContent=globalRoundIndex()+1;
   document.getElementById('roundTotal').textContent=totalRounds();
   document.getElementById('yearBig').textContent=r.year;
