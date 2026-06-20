@@ -30,10 +30,8 @@
     <div class="period-progress" id="periodProgress"></div>
     <div class="topbar">
       <div class="left">
-        <span class="era-pill" id="eraPill">互联网泡沫顶点</span>
+        <span class="era-pill" id="eraPill">2000 · 互联网泡沫顶点</span>
         <span class="round-no">第 <b id="roundNo">1</b>/<span id="roundTotal">20</span> 站</span>
-        <span class="sep">|</span>
-        <span class="year-big" id="yearBig">2000</span>
       </div>
       <div class="right">
         <span class="title-now" id="titleNow">投资分析师</span>
@@ -261,7 +259,8 @@ function applyTheme(t){
   r.setProperty('--ink-faint',t.faint);
   r.setProperty('--line',t.line);
   r.setProperty('--card', t.paper);
-  // accent 用于强调(进度条高亮/卡片描边等)，但不覆盖 good/bad/warn 语义色
+  r.setProperty('--accent', t.accent||'#8a5a3a');
+  // accent 用于强调(进度条高亮/卡片描边/音乐图标等)，随时代变化
 }
 function applyPeriodTheme(idx){
   const p=GAME.periods[idx];
@@ -320,8 +319,7 @@ function renderTop(){
   const p=GAME.periods[pIdx], r=p.rounds[rIdx];
   document.getElementById('roundNo').textContent=globalRoundIndex()+1;
   document.getElementById('roundTotal').textContent=totalRounds();
-  document.getElementById('yearBig').textContent=r.year;
-  document.getElementById('eraPill').textContent=r.era;
+  document.getElementById('eraPill').textContent=r.year+' · '+r.era;
   document.getElementById('titleNow').textContent=curTitle();
   renderProgress();
 }
@@ -358,7 +356,7 @@ function showStory(){
 function trendLabel(t){
   return {up:['📈','顺应时代趋势'],hot:['🔥','风口过热，泡沫与机会并存'],down:['📉','逆势夕阳，但若成则爆'],safe:['🛡','稳健确定，放弃暴利']}[t]||['',''];
 }
-function showChoices(){
+function showChoices(preselectIdx){
   const r=GAME.periods[pIdx].rounds[rIdx]; selDeal=null;
   // 防死局：若所有项目都投不起，把门槛最低的项目标记为"可小额参投"(回报减半)
   const anyAfford = r.deals.some(d=>state.aum>=d.minAUM);
@@ -437,7 +435,7 @@ function undoStaged(){
   const tm=TREND_MBTI[last.deal.trend]; if(tm){for(const k in tm)mbti[k]-=tm[k];}
   selDeal=null; saveProgress();
   const r=GAME.periods[pIdx].rounds[rIdx];
-  const prevIdx=r.deals.findIndex(x=>x===last.deal);
+  const prevIdx=r.deals.findIndex(x=>x.name===last.deal.name && x.tag===last.deal.tag);
   showChoices(prevIdx);
 }
 function advance(){
