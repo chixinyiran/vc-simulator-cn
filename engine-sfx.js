@@ -56,7 +56,22 @@ const Sfx = (function(){
     tick(){ tone(1200,0,0.04,'square',0.15); },
   };
 
+  // 首次用户交互时解锁 AudioContext(浏览器自动播放策略要求)
+  let unlocked=false;
+  function unlock(){
+    if(unlocked) return;
+    unlocked=true;
+    ensure();
+    // 播一个极轻的静默音“唤醒”音频管线
+    if(ctx){ try{ const o=ctx.createOscillator(),g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.02);}catch(e){} }
+  }
+  try{
+    ['pointerdown','touchstart','click','keydown'].forEach(ev=>
+      document.addEventListener(ev, unlock, {once:false, passive:true, capture:true}));
+  }catch(e){}
+
   return {
+    unlock,
     setEnabled(v){ enabled=!!v; },
     isEnabled(){ return enabled; },
     play(name){

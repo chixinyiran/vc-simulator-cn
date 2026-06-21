@@ -152,7 +152,6 @@ function toggleMusic(){
   const btn=document.getElementById('musicBtn');
   btn.innerHTML=isOn?MUSIC_SVG_ON:MUSIC_SVG_OFF;
   btn.classList.toggle('on',isOn);
-  if(window.Sfx)Sfx.setEnabled(isOn);
   lsSet(CONFIG.storage.music, isOn?1:0);
 }
 
