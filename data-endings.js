@@ -4,11 +4,11 @@
 
 const DATA_ENDINGS = {
   endingTiers: [
-    { min: 820, key: "legend" },
-    { min: 730, key: "master" },
+    { min: 850, key: "legend" },
+    { min: 750, key: "master" },
     { min: 650, key: "veteran" },
-    { min: 570, key: "steady" },
-    { min: 480, key: "rollercoaster" },
+    { min: 550, key: "steady" },
+    { min: 450, key: "rollercoaster" },
     { min: 0,   key: "exit" },
   ],
   endingMeta: {
