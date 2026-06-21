@@ -33,6 +33,23 @@
   .btn-ic svg{width:17px;height:17px;display:block;}
   .btn:hover{background:var(--accent,#8a5a3a);color:var(--paper);border-color:var(--accent,#8a5a3a);} .btn:active{transform:scale(.97);background:var(--accent,#8a5a3a);color:var(--paper);border-color:var(--accent,#8a5a3a);}
   .btn.ghost{padding:12px 28px;font-size:14px;}
+  /* ===== 点击灵动效果 ===== */
+  .btn,.scenario .sc-opt,.deal,.undo-icon,.music-btn,.info-btn,.tip-close{position:relative;overflow:hidden;}
+  .ripple{position:absolute;border-radius:50%;transform:scale(0);pointer-events:none;background:rgba(138,90,58,.35);animation:rippleExpand .6s ease-out forwards;z-index:0;}
+  .btn .ripple{background:rgba(245,241,232,.45);}
+  @keyframes rippleExpand{to{transform:scale(2.6);opacity:0;}}
+  /* 主按钮按下:下沉回弹 */
+  .btn.tapped{animation:tapBtn .3s ease;}
+  @keyframes tapBtn{0%{transform:scale(1)}40%{transform:scale(.94)}100%{transform:scale(1)}}
+  /* 投资卡选中:边框脉冲高亮 */
+  .deal.pulse{animation:dealPulse .55s ease;}
+  @keyframes dealPulse{0%{box-shadow:0 0 0 0 rgba(184,134,11,.5)}100%{box-shadow:0 0 0 12px rgba(184,134,11,0)}}
+  /* 情境选项选中:弹入 */
+  .sc-opt.bounce{animation:optBounce .4s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes optBounce{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+  /* 图标按钮按下:弹跳 */
+  .icon-tap{animation:iconTap .42s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes iconTap{0%{transform:scale(1)}40%{transform:scale(.82) rotate(-8deg)}100%{transform:scale(1) rotate(0)}}
   .btn:disabled{opacity:.35;pointer-events:none;}
   #cover .credit{margin-top:46px;font-size:11.5px;color:var(--ink-faint);opacity:.7;font-style:italic;line-height:2;}
 

@@ -680,3 +680,41 @@ function stopMusic(){
   btn.innerHTML=MUSIC_SVG_OFF; btn.classList.remove('on');
   btn.style.display='none';  // 首页/结局隐藏按钮
 }
+
+// ===== 点击灵动效果：波纹 + 按元素类型差异化动画 =====
+(function(){
+  function spawnRipple(el, x, y){
+    try{
+      const r=el.getBoundingClientRect();
+      const size=Math.max(r.width, r.height);
+      const rip=document.createElement('span');
+      rip.className='ripple';
+      rip.style.width=rip.style.height=size+'px';
+      rip.style.left=(x-r.left-size/2)+'px';
+      rip.style.top=(y-r.top-size/2)+'px';
+      el.appendChild(rip);
+      setTimeout(()=>rip.remove(), 650);
+    }catch(e){}
+  }
+  function addAnim(el, cls){
+    el.classList.remove(cls);
+    void el.offsetWidth; // 重排以重启动画
+    el.classList.add(cls);
+    setTimeout(()=>el.classList.remove(cls), 600);
+  }
+  document.addEventListener('pointerdown', function(e){
+    const x=e.clientX, y=e.clientY;
+    // 主按钮
+    const btn=e.target.closest('.btn');
+    if(btn){ spawnRipple(btn,x,y); addAnim(btn,'tapped'); return; }
+    // 投资卡
+    const deal=e.target.closest('.deal:not(.locked)');
+    if(deal){ spawnRipple(deal,x,y); addAnim(deal,'pulse'); return; }
+    // 情境选项
+    const opt=e.target.closest('.sc-opt');
+    if(opt){ spawnRipple(opt,x,y); addAnim(opt,'bounce'); return; }
+    // 图标按钮(音乐/返回/info/玩法关闭)
+    const icon=e.target.closest('.music-btn,.undo-icon,.info-btn,.tip-close');
+    if(icon){ addAnim(icon,'icon-tap'); return; }
+  }, true);
+})();
