@@ -203,7 +203,9 @@ function applyPeriodTheme(idx){
 }
 function resetTheme(){ applyTheme(BASE_THEME); }
 function globalRoundIndex(){let n=0;for(let i=0;i<pIdx;i++)n+=GAME.periods[i].rounds.length;return n+rIdx;}
-function totalRounds(){let n=0;GAME.periods.forEach(p=>n+=p.rounds.length);return n;}
+// 总站数是固定值(游戏数据不变)，缓存一次即可
+const TOTAL_ROUNDS=GAME.periods.reduce((n,p)=>n+p.rounds.length,0);
+function totalRounds(){return TOTAL_ROUNDS;}
 
 function showPeriodIntro(){
   maybeStartMusic();
@@ -266,10 +268,12 @@ function renderProgress(){
     return `<div class="pp-seg ${cls}"><div class="rn">${p.roman}</div><div class="bar"></div><div class="lbl">${p.name}</div></div>`;
   }).join('');
 }
+// 属性条映射表(固定,提到函数外避免每次重建)
+const STAT_MAP=[['Aum','aum'],['Track','track'],['Net','network'],['Luck','luck'],['Health','health']];
 function renderStats(instant,deltas){
   const SM=CONFIG.statMax;
-  const map=[['Aum','aum',SM.aum],['Track','track',SM.track],['Net','network',SM.network],['Luck','luck',SM.luck],['Health','health',SM.health]];
-  for(const [id,key,max] of map){
+  for(const [id,key] of STAT_MAP){
+    const max=SM[key];
     document.getElementById('v'+id).textContent=Math.round(state[key]);
     const pct=clamp(state[key]/max*100,0,100);
     const bar=document.getElementById('b'+id);
@@ -345,12 +349,8 @@ function confirmDeal(){
   const small = (selDeal===window._smallTicketIdx);
   // 投资选择按 trend 暗含性格倾向，累积 MBTI 分
   const tm2=TREND_MBTI[d.trend]; if(tm2){for(const k in tm2)mbti[k]+=tm2[k];}
-  // 计算该选项在本题里的「优劣排名」(按 base 降序，0=最优)，用于排名计分
-  const sorted=[...r.deals].slice().sort((a,b)=>b.base-a.base);
-  const rankIdx=sorted.findIndex(x=>x===d);
-  const optCount=r.deals.length;
   // 即时只扣投入(占用资本)，结果期末揭晓。先记录这笔押注。
-  stagedThisPeriod.push({year:r.year, deal:d, tag:d.tag, name:d.name, small, rankIdx, optCount});
+  stagedThisPeriod.push({year:r.year, deal:d, tag:d.tag, name:d.name, small});
   // 显示"已封存"页（提供重选入口，未揭晓前可反悔）
   $content.innerHTML=`
     <div class="staged">
@@ -430,10 +430,7 @@ function revealPeriod(){
     state.luck=clamp(state.luck+R.dl,0,CONFIG.statMax.luck);
     state.health=clamp(state.health+R.dh,CONFIG.health.minHealth,CONFIG.health.maxHealth);
     R.s.tier=R.tier; R.s.da=R.da;
-    // 排名计分：按选项优劣排名给基础分，运气在档位上下浮动一档(钳制0-50)
-    const qScore=rankScore(R.s.rankIdx, R.s.optCount, R.tier);
-    R.s.qScore=qScore;
-    fullHistory.push({year:R.s.year, tag:R.s.tag, name:R.s.name, tier:R.tier, score:qScore});
+    fullHistory.push({year:R.s.year, tag:R.s.tag, name:R.s.name, tier:R.tier});
   });
   if(window.Sfx)Sfx.revealTier(results.map(R=>R.tier));
   renderStats(false);
@@ -492,25 +489,12 @@ function calcStyle(){
   return MBTI.styles[key];
 }
 function mbtiDimBars(){
-  // 返回两维度偏向百分比(50中点)，max≈12(6题+24投资估算)
+  // 返回两维度偏向百分比(50中点)。单维度极端累计≈5题×3=15，取 14 为归一化分母
   const norm=(v,max)=>clamp(50+v/max*50,6,94);
   return {
     risk:{val:mbti.risk, pct:norm(mbti.risk,14)},
     mind:{val:mbti.mind, pct:norm(mbti.mind,14)},
   };
-}
-// 排名计分：根据选项优劣排名(rankIdx,0=最优)与选项数给基础分，再由运气(tier)上下浮动一档
-// 3选项:50/25/0  4选项:50/30/15/0  5选项:50/40/25/15/0
-function rankScore(rankIdx, optCount, tier){
-  const TABLE={3:[50,25,0],4:[50,30,15,0],5:[50,40,25,15,0]};
-  const pts=TABLE[optCount]||TABLE[3];
-  let idx=(typeof rankIdx==='number'&&rankIdx>=0)?Math.min(rankIdx,pts.length-1):pts.length-1;
-  // 运气浮动：50% 概率触发，触发时在上下一档之间随机(等概率上/下)；钳制在档位范围(0-50)
-  if(Math.random()<0.5){
-    if(Math.random()<0.5) idx=Math.max(0, idx-1);
-    else idx=Math.min(pts.length-1, idx+1);
-  }
-  return pts[idx];
 }
 function calcScore(){
   // 五属性归一化评分(2026-06-21重设计)：每项 min(1,(值/目标)^gamma)*权重，累加满1000
