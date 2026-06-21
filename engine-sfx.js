@@ -9,7 +9,17 @@ const Sfx = (function(){
     if(!ctx){
       try{
         ctx=new (window.AudioContext||window.webkitAudioContext)();
-        master=ctx.createGain(); master.gain.value=VOL; master.connect(ctx.destination);
+        master=ctx.createGain(); master.gain.value=VOL;
+        // 限幅压缩器：防止多层叠加剔波爆音,让音效更结实饱满(尤其震撼开场不糊)
+        var comp=ctx.createDynamicsCompressor();
+        comp.threshold.setValueAtTime(-3, ctx.currentTime);
+        comp.knee.setValueAtTime(12, ctx.currentTime);
+        comp.ratio.setValueAtTime(6, ctx.currentTime);
+        comp.attack.setValueAtTime(0.003, ctx.currentTime);
+        comp.release.setValueAtTime(0.15, ctx.currentTime);
+        // makeup gain:压缩后补响度,保住冲击力(响而不爆)
+        var makeup=ctx.createGain(); makeup.gain.value=1.5;
+        master.connect(comp); comp.connect(makeup); makeup.connect(ctx.destination);
       }catch(e){ ctx=null; }
     }
     if(ctx && ctx.state==='suspended'){ try{ctx.resume();}catch(e){} }
@@ -42,7 +52,25 @@ const Sfx = (function(){
     // 翻页/推进
     swipe(){ tone(520,0,0.14,'triangle',0.5,820); tone(780,0.04,0.10,'sine',0.3); },
     // 开始游戏/启程：明亮上扬三音琴音，有仪式感(专门给重要入场动作)
-    start(){ arp([523,784,1047], 0.075, 0.26, 'triangle', 0.6); tone(1319,0.18,0.32,'sine',0.4); },
+    // 开始游戏/启程：史诗级震撼开场——低频上扫铺底+号角琶音爆发+顶点和弦齐鸣+高频闪耀
+    start(){
+      // ① 低频厚重铺底：低音上扫,奠定恢弘基底(像引擎/巨门开启)
+      tone(98, 0, 0.55, 'sawtooth', 0.55, 196);
+      tone(131, 0.02, 0.50, 'triangle', 0.45, 262);
+      // ② 主号角：中频上扬琶音,明亮有力,层层推进
+      tone(262, 0.04, 0.30, 'triangle', 0.55);
+      tone(330, 0.10, 0.30, 'triangle', 0.6);
+      tone(392, 0.16, 0.30, 'triangle', 0.65);
+      tone(523, 0.22, 0.42, 'triangle', 0.7);
+      // ③ 顶点和弦齐鸣：do-mi-sol-do↑ 同时炸开,饱满辉煌
+      tone(523, 0.30, 0.5, 'triangle', 0.5);
+      tone(659, 0.30, 0.5, 'triangle', 0.45);
+      tone(784, 0.30, 0.5, 'sine', 0.5);
+      tone(1047, 0.30, 0.55, 'triangle', 0.55);
+      // ④ 高频闪耀：高音点缀+顶音收尾,光芒绽放
+      tone(1568, 0.34, 0.45, 'sine', 0.4);
+      tone(2093, 0.40, 0.5, 'sine', 0.3);
+    },
     // 揭晓结果(按档位)
     SS(){ arp([523,659,784,1047,1319], 0.075, 0.28, 'triangle', 0.5); tone(1568,0.34,0.4,'sine',0.35); }, // 欢庆上行+亮顶
     S(){ arp([523,784,1047], 0.07, 0.24, 'triangle', 0.45); },   // 明亮三音
