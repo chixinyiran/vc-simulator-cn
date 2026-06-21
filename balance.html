@@ -110,8 +110,18 @@ canvas{width:100%;display:block;}
       </div>
 
       <div class="grp">
-        <div class="grp-t">评分权重</div>
+        <div class="grp-t">评分权重（合计=满分）</div>
         <div id="scoreBox"></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-t">评分目标值（达此值=拿满该项分）</div>
+        <div id="targetBox"></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-t">曲线参数</div>
+        <div id="gammaBox"></div>
       </div>
 
       <div class="actions">
@@ -159,29 +169,30 @@ const SIM = {"dealsByEra":[[{"minAUM":0,"trend":"hot","base":0.3,"aum":30,"track
 
 // ===== 默认参数（= config.js）=====
 const DEFAULTS = {
-  start:{aum:40,track:5,network:10,health:90,luck:8},
-  mult:{SS:1.8,S:1.0,A:0.25,B:-0.7,C:-1.4},
-  prob:{baseAdjust:0.02,luckPerPoint:0.012,perfBase:0.68,
+  start:{aum:100,track:0,network:20,health:100,luck:50},
+  mult:{SS:2.0,S:1.0,A:0.3,B:-0.6,C:-1.2},
+  prob:{baseAdjust:0.02,luckPerPoint:0.004,perfBase:0.68,
         cutSS:0.80,cutS:0.62,cutA:0.44,cutB:0.28},
-  health:{baseDecay:1,rampPerPeriod:0.5,extraOnBad:2,extraOnVeryBad:5,bonusOnGreat:1},
-  score:{track:1.8,aum:0.28,network:0.5,luck:3.5}
+  health:{baseDecay:1,rampPerPeriod:0.6,extraOnBad:2,extraOnVeryBad:5,bonusOnGreat:1},
+  // 五属性归一化评分(满分1000)
+  target:{track:480,aum:1300,network:350,luck:85,health:68},
+  weight:{track:340,aum:240,network:150,luck:110,health:160},
+  gamma:0.83
 };
-const luckDelta={SS:3,S:1,A:0,B:-1,C:-3};
-const tierPoints={SS:50,S:40,A:28,B:15,C:5};
+const luckDelta={SS:4,S:2,A:0,B:-2,C:-4};
 const baseClamp={min:0.05,max:0.93}, luckClamp={min:-0.16,max:0.20};
-const earlyOutThreshold=30, earlyOutPenalty=0.82, deadPenalty=0.55, earlyOutTrackCap=260;
-const smallTicketFactor=0.5, statMaxLuck=40;
+const deadPenalty=0.6;
+const smallTicketFactor=0.5, statMaxLuck=100, luckBase=50;
 const RUNS=3000;
 
-// 结局称号阈值（贴近 data-endings 的分档逻辑，按综合评分）
+// 结局称号阈值（= data-endings.js 真实分档线）
 const ENDINGS=[
-  {n:'封神级·时代造王者',cut:560},
-  {n:'顶级猎手',cut:430},
-  {n:'卓越投资人',cut:330},
-  {n:'合格操盘手',cut:240},
-  {n:'平庸幸存者',cut:160},
-  {n:'离场的勇者',cut:0},
-  {n:'健康透支·出局',cut:-1} // 特殊
+  {n:'封神级',cut:820},
+  {n:'一线传奇',cut:730},
+  {n:'资深合伙人',cut:650},
+  {n:'稳进玩家',cut:570},
+  {n:'过山车',cut:480},
+  {n:'离场',cut:0}
 ];
 
 let P = JSON.parse(JSON.stringify(DEFAULTS));
@@ -200,9 +211,16 @@ const SLIDERS=[
     ['baseDecay','每笔基础衰减',0,4,0.5],['rampPerPeriod','后期递增/时代',0,2,0.1],
     ['extraOnBad','失利额外扣',0,8,1],['extraOnVeryBad','惨败额外扣',0,15,1],
     ['bonusOnGreat','大成功提振',0,5,1]]],
-  ['scoreBox','score',[
-    ['track','业绩权重',0,4,0.1],['aum','资本权重',0,1,0.02],
-    ['network','人脉权重',0,2,0.1],['luck','运气权重',0,8,0.1]]]
+  ['scoreBox','weight',[
+    ['track','业绩权重',0,500,10],['aum','资本权重',0,500,10],
+    ['network','人脉权重',0,400,10],['luck','运气权重',0,300,10],
+    ['health','健康权重',0,400,10]]],
+  ['targetBox','target',[
+    ['track','业绩目标(满分线)',100,1000,10],['aum','资本目标',300,3000,50],
+    ['network','人脉目标',100,800,10],['luck','运气目标',30,100,5],
+    ['health','健康目标',30,100,2]]],
+  ['gammaBox','meta',[
+    ['gamma','评分曲线指数(<1更平滑)',0.5,1.2,0.02]]]
 ];
 const TIERS=[['SS','tg-ss','传奇回报'],['S','tg-s','投资成功'],['A','tg-a','勉强保本'],['B','tg-b','投资失利'],['C','tg-c','血本无归']];
 const TIER_COLORS={SS:'#9c5a2c',S:'#3c6b4f',A:'#9a7b3a',B:'#a8453a',C:'#6b2d28'};
@@ -211,7 +229,7 @@ function buildSliders(){
   SLIDERS.forEach(([boxId,grp,items])=>{
     const box=document.getElementById(boxId); box.innerHTML='';
     items.forEach(([key,label,min,max,step])=>{
-      const v=P[grp][key];
+      const v= grp==='meta'? P[key] : P[grp][key];
       const row=document.createElement('div'); row.className='row';
       row.innerHTML=`<div class="lab"><span class="nm">${label}</span><span class="val" id="v_${grp}_${key}">${fmt(v,step)}</span></div>
         <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-grp="${grp}" data-key="${key}" data-step="${step}">`;
@@ -231,8 +249,9 @@ function buildSliders(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
     inp.addEventListener('input',e=>{
       const g=e.target.dataset.grp,k=e.target.dataset.key,st=parseFloat(e.target.dataset.step);
-      P[g][k]=parseFloat(e.target.value);
-      document.getElementById(`v_${g}_${k}`).textContent= g==='mult'?P[g][k].toFixed(1):fmt(P[g][k],st);
+      const v=parseFloat(e.target.value);
+      if(g==='meta'){ P[k]=v; } else { P[g][k]=v; }
+      document.getElementById(`v_${g}_${k}`).textContent= g==='mult'?v.toFixed(1):fmt(v,st);
       scheduleSim();
     });
   });
@@ -285,17 +304,19 @@ function simOneGame(tierCounter){
     }
     if(dead) break;
   }
-  // 评分
-  let score=state.track*P.score.track+state.aum*P.score.aum+state.network*P.score.network+state.luck*P.score.luck;
+  // 评分：五属性归一化 min(1,(值/目标)^gamma)*权重，累加满1000
+  let score=0; const parts={};
+  for(const k in P.weight){
+    const v=Math.max(0,state[k]||0);
+    const part=Math.min(1,Math.pow(v/P.target[k],P.gamma))*P.weight[k];
+    parts[k]=part; score+=part;
+  }
   if(dead){ score*=deadPenalty; }
-  else if(state.health<earlyOutThreshold){ score*=earlyOutPenalty; }
-  const parts={track:state.track*P.score.track,aum:state.aum*P.score.aum,network:state.network*P.score.network,luck:state.luck*P.score.luck};
-  return {state:{...state},score,dead,parts};
+  return {state:{...state},score:Math.round(score),dead,parts};
 }
 
 function pickEnding(res){
-  if(res.dead && res.state.track<earlyOutTrackCap) return ENDINGS[6].n;
-  for(const e of ENDINGS){ if(e.cut>=0 && res.score>=e.cut) return e.n; }
+  for(const e of ENDINGS){ if(res.score>=e.cut) return e.n; }
   return ENDINGS[5].n;
 }
 
@@ -308,7 +329,7 @@ function runSim(){
   const agg={aum:0,track:0,network:0,health:0,luck:0};
   const mins={aum:1e9,track:1e9,network:1e9,health:1e9,luck:1e9};
   const maxs={aum:-1e9,track:-1e9,network:-1e9,health:-1e9,luck:-1e9};
-  let deadCnt=0; const partAgg={track:0,aum:0,network:0,luck:0};
+  let deadCnt=0; const partAgg={track:0,aum:0,network:0,luck:0,health:0};
   for(let i=0;i<RUNS;i++){
     const res=simOneGame(tierCounter);
     scores.push(res.score);
@@ -384,9 +405,9 @@ function renderHist(scores,partAgg){
   ctx.fillText(Math.round(hi), W-pad-bw, H-6);
   ctx.fillStyle='#a8453a'; ctx.fillText('均值'+Math.round(mean), mx, H-6);
   // 评分构成
-  const tot=partAgg.track+partAgg.aum+partAgg.network+partAgg.luck;
+  const pl={track:'业绩',aum:'资本',network:'人脉',luck:'运气',health:'健康'};
+  const tot=Object.keys(pl).reduce((s,k)=>s+(partAgg[k]||0),0)||1;
   const sp=document.getElementById('scoreParts');
-  const pl={track:'业绩',aum:'资本',network:'人脉',luck:'运气'};
   sp.innerHTML=Object.keys(pl).map(k=>`<span class="chip">${pl[k]} <b>${(partAgg[k]/tot*100).toFixed(0)}%</b></span>`).join('');
 }
 

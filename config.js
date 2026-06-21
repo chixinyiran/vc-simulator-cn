@@ -4,18 +4,18 @@
 
 const CONFIG = {
   // 玩家初始属性
-  start: { aum:40, track:5, network:10, health:90, luck:8 },
+  start: { aum:100, track:0, network:20, health:100, luck:50 },
 
   // 属性条最大值（用于UI进度条归一化，不是硬上限）
-  statMax: { aum:1600, track:440, network:60, luck:40, health:100 },
+  statMax: { aum:1300, track:480, network:350, luck:100, health:100 },
 
   // 5档结果对应的属性变动倍率 + 显示样式
   outcomeTiers: {
-    SS: { mult: 1.8,  label:'传奇回报', cls:'ss', emoji:'🚀' },
+    SS: { mult: 2.0,  label:'传奇回报', cls:'ss', emoji:'🚀' },
     S:  { mult: 1.0,  label:'投资成功', cls:'s',  emoji:'✅' },
-    A:  { mult: 0.25, label:'勉强保本', cls:'a',  emoji:'➖' },
-    B:  { mult:-0.7,  label:'投资失利', cls:'b',  emoji:'⚠️' },
-    C:  { mult:-1.4,  label:'血本无归', cls:'c',  emoji:'💀' },
+    A:  { mult: 0.3,  label:'勉强保本', cls:'a',  emoji:'➖' },
+    B:  { mult:-0.6,  label:'投资失利', cls:'b',  emoji:'⚠️' },
+    C:  { mult:-1.2,  label:'血本无归', cls:'c',  emoji:'💀' },
   },
 
   // === 概率结算参数 ===
@@ -26,19 +26,20 @@ const CONFIG = {
   probability: {
     baseAdjust: 0.02,                 // 全局基础胜率微调(正=整体偏好运)
     baseClamp: { min:0.05, max:0.93 },
-    luckPerPoint: 0.012,              // 每点运气对胜率影响
+    luckBase: 50,                     // 运气中位基准(0-100制)
+    luckPerPoint: 0.004,              // 每点运气对胜率影响
     luckClamp: { min:-0.16, max:0.20 },
     perfWeight: { base:0.68, dice:0.32 },  // 运气适度参与:同样选择运气影响约上下一档，又能拉开分数
     tierCuts: { SS:0.80, S:0.62, A:0.44, B:0.28 },  // 低于B的就是C
   },
 
   // 运气增减（按结果档位）
-  luckDelta: { SS:3, S:1, A:0, B:-1, C:-3 },
+  luckDelta: { SS:4, S:2, A:0, B:-2, C:-4 },
 
   // 健康衰减规则
   health: {
     baseDecay: 1,        // 每笔投资基础衰减
-    rampPerPeriod: 0.5,  // 每过一个时代,衰减+0.5(后期更耗)
+    rampPerPeriod: 0.6,  // 每过一个时代,衰减+0.6(后期更耗)
     extraOnBad: 2,       // 失利额外扣
     extraOnVeryBad: 5,   // 惨败额外扣
     bonusOnGreat: 1,     // 大成功反而提振
@@ -54,9 +55,12 @@ const CONFIG = {
     earlyOutTrackCap: 260,   // 健康死亡且业绩低于此 → 触发"健康透支"特殊结局
   },
 
-  // 综合评分公式权重
-  scoreWeights: { track:1.8, aum:0.28, network:0.5, luck:3.5 },
-  tierPoints: { SS:50, S:40, A:28, B:15, C:5 },
+  // === 综合评分（五属性归一化构成1000分，2026-06-21重设计）===
+  // 每项得分 = min(1,(当前值/scoreTarget)^scoreGamma) * scoreWeight；累加满1000
+  scoreTarget: { track:480, aum:1300, network:350, luck:85, health:68 },
+  scoreWeight: { track:340, aum:240, network:150, luck:110, health:160 }, // 合计1000
+  scoreGamma: 0.83,        // 平滑曲线指数(未达目标也能拿大部分分)
+  deadPenalty: 0.6,        // 健康归零时总分打折
 
   // 小额参投(资本不够时兜底)回报系数
   smallTicketFactor: 0.5,

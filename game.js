@@ -499,9 +499,15 @@ function rankScore(rankIdx, optCount, tier){
   return pts[idx];
 }
 function calcScore(){
-  // 新计分：累加每题排名得分(每题0-50)，20题满分1000
+  // 五属性归一化评分(2026-06-21重设计)：每项 min(1,(值/目标)^gamma)*权重，累加满1000
+  const T=CONFIG.scoreTarget, W=CONFIG.scoreWeight, g=CONFIG.scoreGamma;
   let s=0;
-  for(const h of fullHistory){ s+=(typeof h.score==='number'?h.score:0); }
+  for(const k in W){
+    const v=Math.max(0, state[k]||0);
+    const r=Math.min(1, Math.pow(v/T[k], g));
+    s+=r*W[k];
+  }
+  if(state.health<=0) s*=CONFIG.deadPenalty;        // 健康归零出局打折
   return Math.round(s);
 }
 function pickEnding(score,healthDead){
