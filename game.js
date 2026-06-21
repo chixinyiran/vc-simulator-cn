@@ -166,12 +166,13 @@ function renderIntro(){
     ${cards}`;
 }
 function toggleTip(){ if(window.Sfx)Sfx.play('click'); const m=document.getElementById('tipMask'); m.classList.toggle('hidden'); }
-function closeTip(e){ if(e.target.id==='tipMask') document.getElementById('tipMask').classList.add('hidden'); }
+function closeTip(e){ if(e.target.id==='tipMask'){ if(window.Sfx)Sfx.play('click'); document.getElementById('tipMask').classList.add('hidden'); } }
 function newGameConfirm(){
   if(window.Sfx)Sfx.play('click');
   if(confirm(CONFIG.ui.confirmRestart)){ goHome(); }
 }
 function toggleMusic(){
+  if(window.Sfx)Sfx.play('click');
   const isOn=Music.toggle(typeof pIdx==='number'?pIdx:0);
   const btn=document.getElementById('musicBtn');
   btn.innerHTML=isOn?MUSIC_SVG_ON:MUSIC_SVG_OFF;
@@ -326,6 +327,7 @@ function trendLabel(t){
   return {up:['📈','顺应时代趋势'],hot:['🔥','风口过热，泡沫与机会并存'],down:['📉','逆势夕阳，但若成则爆'],safe:['🛡','稳健确定，放弃暴利']}[t]||['',''];
 }
 function showChoices(preselectIdx){
+  if(window.Sfx)Sfx.play('swipe');
   const r=GAME.periods[pIdx].rounds[rIdx]; selDeal=null;
   // 防死局：若所有项目都投不起，把门槛最低的项目标记为"可小额参投"(回报减半)
   const anyAfford = r.deals.some(d=>state.aum>=d.minAUM);
@@ -640,7 +642,7 @@ function genImage(){
     }).catch(e=>{console.error(e);toast(CONFIG.text.genImageFail,3000);});
   },80);
 }
-function closeImg(){document.getElementById('imgModal').classList.remove('show');}
+function closeImg(){ if(window.Sfx)Sfx.play('click'); document.getElementById('imgModal').classList.remove('show'); }
 function copyLink(){
   if(window.Sfx)Sfx.play('click');
   let nm=getPlayerName();
