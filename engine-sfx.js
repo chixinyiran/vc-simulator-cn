@@ -90,3 +90,4 @@ const Sfx = (function(){
     }
   };
 })();
+window.Sfx = Sfx;  // 显式挂全局,让 if(window.Sfx) 检查能过
