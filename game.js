@@ -19,7 +19,7 @@ const GAME = {
   endingMeta: DATA_ENDINGS.endingMeta,
 };
 
-let state, pIdx, rIdx, selDeal, stagedThisPeriod, fullHistory, gameOver, mbti;
+let state, pIdx, rIdx, selDeal, stagedThisPeriod, fullHistory, gameOver, mbti, upPicks=0;
 
 // ===== 本地存档系统 (localStorage) =====
 const SAVE_KEY=CONFIG.storage.save;
@@ -58,7 +58,7 @@ function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 // 保存中途进度(每进入一站/答题时调用)
 function saveProgress(){
   if(gameOver)return;
-  lsSet(SAVE_KEY,{state,pIdx,rIdx,stagedThisPeriod,fullHistory,mbti,ts:Date.now()});
+  lsSet(SAVE_KEY,{state,pIdx,rIdx,stagedThisPeriod,fullHistory,mbti,upPicks,ts:Date.now()});
 }
 function clearProgress(){ lsDel(SAVE_KEY); }
 // 保存完成的结果
@@ -74,7 +74,7 @@ function saveResult(payload){
 // 续玩：恢复存档继续
 function continueGame(){
   const s=lsGet(SAVE_KEY); if(!s){startGame();return;}
-  state={...GAME.start,...s.state}; pIdx=s.pIdx; rIdx=s.rIdx; stagedThisPeriod=s.stagedThisPeriod||[];
+  state={...GAME.start,...s.state}; upPicks=s.upPicks||0; pIdx=s.pIdx; rIdx=s.rIdx; stagedThisPeriod=s.stagedThisPeriod||[];
   fullHistory=s.fullHistory||[]; mbti=s.mbti||{risk:0,mind:0}; selDeal=null; gameOver=false;
   document.getElementById('cover').classList.add('hidden');
   $ending.classList.add('hidden');
@@ -159,6 +159,7 @@ function startGame(){
   clearProgress();
   resetTheme();
   state={...GAME.start};
+  upPicks=0;
   pIdx=0; rIdx=0; selDeal=null; stagedThisPeriod=[]; fullHistory=[]; gameOver=false;
   mbti={risk:0,mind:0};
   document.getElementById('cover').classList.add('hidden');
@@ -385,7 +386,8 @@ function rollOutcome(d){
   let luckBonus=(state.luck-CONFIG.start.luck)*P.luckPerPoint;
   luckBonus=clamp(luckBonus,P.luckClamp.min,P.luckClamp.max);
   const dice=Math.random();
-  let p=clamp(d.base+P.baseAdjust+luckBonus,P.baseClamp.min,P.baseClamp.max);
+  const tb=(P.trendBoost&&P.trendBoost[d.trend])||0;
+  let p=clamp(d.base+P.baseAdjust+luckBonus+tb,P.baseClamp.min,P.baseClamp.max);
   const perf=p*P.perfWeight.base+(1-dice)*P.perfWeight.dice;
   if(perf>=P.tierCuts.SS) return 'SS';
   if(perf>=P.tierCuts.S)  return 'S';
@@ -400,7 +402,15 @@ function revealPeriod(){
     const tier=rollOutcome(d);
     const tm=GAME.outcomeTiers[tier];
     const sf=s.small?CONFIG.smallTicketFactor:1;
-    const da={aum:Math.round(d.w.aum*tm.mult*sf), track:Math.round(d.w.track*tm.mult*sf), net:Math.round((d.w.net||0)*Math.max(0.3,tm.mult>0?tm.mult:0.3)*sf)};
+    // 趋势回报修正(仅正收益)：顺势边际递减、风口博中超额
+    const TR=CONFIG.trendReturn; let tg=1;
+    if(tm.mult>0){
+      if(d.trend==='up'){ tg=Math.max(TR.upFloor, Math.pow(TR.upDecay, upPicks)); }
+      else if(d.trend==='hot'||d.trend==='down'){ tg=TR.hotGain; }
+    }
+    if(d.trend==='up') upPicks++;
+    const eff=tm.mult*tg;
+    const da={aum:Math.round(d.w.aum*eff*sf), track:Math.round(d.w.track*eff*sf), net:Math.round((d.w.net||0)*Math.max(0.3,eff>0?eff:0.3)*sf)};
     const dl=CONFIG.luckDelta[tier]||0;
     const HC=CONFIG.health;
     let dh=-(HC.baseDecay+Math.floor(pIdx*HC.rampPerPeriod));
