@@ -549,7 +549,7 @@ function showEnding(healthDead){
       <button class="btn ghost" onclick="copyLink()"><span class="btn-ic">${IC_LINK}</span>复制分享</button>
       <button class="btn ghost" onclick="goHome()"><span class="btn-ic">${IC_RESTART}</span>重新开始</button>
     </div>
-    <div class="share-hint"><span class="hint-ic">${IC_CAMERA}</span>长图生成后会弹出预览，手机端长按图片即可保存到相册<br><span class="hint-ic">${IC_LINK}</span>复制链接发给朋友，挑战谁是更强的投资人</div>`;
+    <div class="share-hint">长图生成后会弹出预览，手机端长按图片即可保存到相册<br>复制链接发给朋友，挑战谁是更强的投资人</div>`;
   renderMBTI();
   // 保存本局结果(供回看) + 清掉中途进度
   gameOver=true; clearProgress();
