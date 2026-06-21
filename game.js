@@ -3,6 +3,7 @@ const MUSIC_SVG_OFF=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const IC_CAMERA=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
 const IC_LINK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
 const IC_RESTART=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>`;
+const IC_CHART=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>`;
 // === 数据合并(从配置和数据文件聚合,代码层只用 GAME 这个统一对象)===
 const $game = document.getElementById('game');
 const $ending = document.getElementById('ending');
@@ -120,7 +121,7 @@ function initCover(){
   } else {
     html+=`<button class="btn" onclick="startGame()">${CONFIG.ui.btnStart}</button>`;
   }
-  if(result){ html+=`<button class="btn ghost" onclick="viewLastResult()">${CONFIG.ui.btnViewLast}</button>`; }
+  if(result){ html+=`<button class="btn ghost" onclick="viewLastResult()"><span class="btn-ic">${IC_CHART}</span>${CONFIG.ui.btnViewLast}</button>`; }
   btns.innerHTML=html;
   // 历史统计
   const sc=document.getElementById('coverStats');
