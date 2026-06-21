@@ -172,7 +172,9 @@ const DEFAULTS = {
   start:{aum:100,track:0,network:20,health:100,luck:50},
   mult:{SS:2.0,S:1.0,A:0.3,B:-0.6,C:-1.2},
   prob:{baseAdjust:0.02,luckPerPoint:0.004,perfBase:0.68,
-        cutSS:0.80,cutS:0.62,cutA:0.44,cutB:0.28},
+        cutSS:0.80,cutS:0.62,cutA:0.44,cutB:0.28,
+        hotBoost:0.08},
+  trend:{upDecay:0.85,upFloor:0.4,hotGain:1.4},
   health:{baseDecay:1,rampPerPeriod:0.6,extraOnBad:2,extraOnVeryBad:5,bonusOnGreat:1},
   // 五属性归一化评分(满分1000)
   target:{track:480,aum:1300,network:350,luck:85,health:68},
@@ -187,11 +189,11 @@ const RUNS=3000;
 
 // 结局称号阈值（= data-endings.js 真实分档线）
 const ENDINGS=[
-  {n:'封神级',cut:820},
-  {n:'一线传奇',cut:730},
+  {n:'封神级',cut:850},
+  {n:'一线传奇',cut:750},
   {n:'资深合伙人',cut:650},
-  {n:'稳进玩家',cut:570},
-  {n:'过山车',cut:480},
+  {n:'稳进玩家',cut:550},
+  {n:'过山车',cut:450},
   {n:'离场',cut:0}
 ];
 
@@ -264,7 +266,8 @@ function rollOutcome(d){
   let luckBonus=(state.luck-DEFAULTS.start.luck)*P.prob.luckPerPoint;
   luckBonus=clamp(luckBonus,luckClamp.min,luckClamp.max);
   const dice=Math.random();
-  let p=clamp(d.base+P.prob.baseAdjust+luckBonus,baseClamp.min,baseClamp.max);
+  const tb=(d.trend==='hot'||d.trend==='down')?P.prob.hotBoost:0;
+  let p=clamp(d.base+P.prob.baseAdjust+luckBonus+tb,baseClamp.min,baseClamp.max);
   const perf=p*P.prob.perfBase+(1-dice)*(1-P.prob.perfBase);
   if(perf>=P.prob.cutSS) return 'SS';
   if(perf>=P.prob.cutS)  return 'S';
@@ -277,7 +280,7 @@ function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
 function simOneGame(tierCounter){
   state={aum:P.start.aum,track:P.start.track,network:P.start.network,health:P.start.health,luck:P.start.luck};
-  let dead=false;
+  let dead=false, upPicks=0;
   for(let era=0; era<5; era++){
     const pool=SIM.dealsByEra[era];
     const rounds=SIM.roundsPerEra[era];
@@ -291,9 +294,17 @@ function simOneGame(tierCounter){
       if(tierCounter) tierCounter[tier]++;
       const mult=P.mult[tier];
       const sf=small?smallTicketFactor:1;
-      state.aum=Math.max(0,state.aum+Math.round(d.aum*mult*sf));
-      state.track=Math.max(0,state.track+Math.round(d.track*mult*sf));
-      state.network=Math.max(0,state.network+Math.round(d.net*Math.max(0.3,mult>0?mult:0.3)*sf));
+      // 趋势回报修正(仅正收益)：顺势边际递减、风口博中超额
+      let tg=1;
+      if(mult>0){
+        if(d.trend==='up') tg=Math.max(P.trend.upFloor, Math.pow(P.trend.upDecay, upPicks));
+        else if(d.trend==='hot'||d.trend==='down') tg=P.trend.hotGain;
+      }
+      if(d.trend==='up') upPicks++;
+      const eff=mult*tg;
+      state.aum=Math.max(0,state.aum+Math.round(d.aum*eff*sf));
+      state.track=Math.max(0,state.track+Math.round(d.track*eff*sf));
+      state.network=Math.max(0,state.network+Math.round(d.net*Math.max(0.3,eff>0?eff:0.3)*sf));
       state.luck=clamp(state.luck+(luckDelta[tier]||0),0,statMaxLuck);
       let dh=-(P.health.baseDecay+Math.floor(era*P.health.rampPerPeriod));
       if(tier==='C')dh-=P.health.extraOnVeryBad;
