@@ -58,9 +58,6 @@ const CONFIG = {
 
   // 健康死亡相关
   healthDeath: {
-    earlyOutThreshold: 30,   // 健康低于此值时综合评分打折
-    earlyOutPenalty: 0.82,
-    deadPenalty: 0.55,       // 健康归零时
     earlyOutTrackCap: 260,   // 健康死亡且业绩低于此 → 触发"健康透支"特殊结局
   },
 
@@ -69,7 +66,7 @@ const CONFIG = {
   scoreTarget: { track:480, aum:1300, network:350, luck:85, health:68 },
   scoreWeight: { track:340, aum:240, network:150, luck:110, health:160 }, // 合计1000
   scoreGamma: 0.83,        // 平滑曲线指数(未达目标也能拿大部分分)
-  deadPenalty: 0.6,        // 健康归零时总分打折
+  deadPenalty: 0.6,        // 健康归零时总分打折(唯一权威值,calcScore 引用)
 
   // 小额参投(资本不够时兜底)回报系数
   smallTicketFactor: 0.5,
@@ -135,7 +132,7 @@ const CONFIG = {
     // 封存页
     stagedTitle: '已下注 · 封存待揭晓',
     stagedTip: '你押上了 ${amt}M。<br>这一笔是神来之手还是踩雷，<br>要等这个时代落幕才能见分晓。',
-    stagedUndo: '返回上一站重选',
+    stagedUndo: '撤销，重选本站',
     // 揭晓页
     verdictMark: '— 时 代 落 幕 · 命 运 揭 晓 —',
     healthDeadWarn: '⚠️ 你的健康已透支殆尽，身体亮起最后的红灯……',

@@ -63,10 +63,10 @@ function saveProgress(){
 function clearProgress(){ lsDel(SAVE_KEY); }
 // 保存完成的结果
 // ===== 上报到后端(全栈版数据收集,同源fetch,静默失败不影响游戏) =====
-// 上报:优先 postMessage 给父页(应用同源,带csrf调API);同时尝试同源fetch(独立打开时)
+// 上报:postMessage 给父页(全栈版iframe嵌入时父页收集);纯静态独立打开时无后端,静默
 function reportApi(kind, body){
+  // 纯静态托管(妙搭/GitHub Pages)无后端,仅 postMessage 给父页(全栈版iframe嵌入时收集);独立打开则静默无操作
   try{ if(window.parent && window.parent!==window){ window.parent.postMessage(Object.assign({__vcsim__:kind}, body), '*'); } }catch(e){}
-  try{ fetch('/api/share/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true}).catch(()=>{}); }catch(e){}
 }
 function reportResult(payload){
   reportApi('result',{
@@ -362,7 +362,7 @@ function showChoices(preselectIdx){
     <div class="deals">${cards}</div>
     <div class="center-btn"><button class="btn" id="confirmBtn" disabled onclick="confirmDeal()">${CONFIG.text.btnConfirmPick}</button></div>`;
   window.scrollTo({top:0,behavior:'smooth'});
-  // 返回上一站时,恢复之前选中的项目高亮
+  // 重选本站时,恢复之前选中的项目高亮
   if(typeof preselectIdx==='number' && preselectIdx>=0){
     const card=document.querySelector('.deal[data-i="'+preselectIdx+'"]');
     if(card && !card.classList.contains('locked')) pickDeal(preselectIdx);
@@ -391,7 +391,7 @@ function confirmDeal(){
       <div class="pick-name">${d.tag} · ${d.name}</div>
       <div class="tip">${CONFIG.text.stagedTip.replace('${amt}',d.amt)}</div>
       <div class="staged-actions">
-        <button type="button" class="undo-icon" onclick="undoStaged()" title="${CONFIG.text.stagedUndo}" aria-label="上一站"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button type="button" class="undo-icon" onclick="undoStaged()" title="${CONFIG.text.stagedUndo}" aria-label="重选本站"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
         <button type="button" class="btn" onclick="advance()">${rIdx>=p.rounds.length-1?CONFIG.text.btnWitness:CONFIG.text.btnContinue}</button>
       </div>
     </div>`;
