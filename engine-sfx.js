@@ -26,7 +26,7 @@ const Sfx = (function(){
         master.connect(comp); comp.connect(makeup); makeup.connect(ctx.destination);
       }catch(e){ ctx=null; }
     }
-    if(ctx && ctx.state==='suspended'){ try{ctx.resume();}catch(e){} }
+    if(ctx && ctx.state!=='running'){ try{ctx.resume();}catch(e){} }
     return ctx;
   }
   // 单音：频率/时长/波形/音量包络
@@ -146,7 +146,7 @@ const Sfx = (function(){
     unlocked=true;
     ensure();
     // 在用户手势同步上下文立即 resume(这是浏览器唯一认可的解锁时机)
-    if(ctx && ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
+    if(ctx && ctx.state!=='running'){ try{ ctx.resume(); }catch(e){} }
     // 播一个极轻的静默音“唤醒”音频管线
     if(ctx){ try{ const o=ctx.createOscillator(),g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.02);}catch(e){} }
   }
@@ -158,6 +158,8 @@ const Sfx = (function(){
   return {
     unlock,
     setEnabled(v){ enabled=!!v; },
+    // 强制唤醒 ctx(可见性恢复时用,不受 unlocked 守卫限制;ctx 不存在则不创建,避免无手势创建)
+    resumeNow(){ try{ if(ctx && ctx.state!=='running'){ ctx.resume(); } }catch(e){} },
     isEnabled(){ return enabled; },
     play(name){
       if(!enabled) return;
@@ -167,7 +169,7 @@ const Sfx = (function(){
       // ctx 刚解锁可能还是 suspended(resume 是异步)。
       // 关键:resume.then 的回调已脱离用户手势上下文,首声 oscillator 会被浏览器静音/丢弃。
       // 解法:resume 后轮询等 ctx.state 真正变 running 再播,确保振荡器在激活管线上发声。
-      if(ctx.state==='suspended'){
+      if(ctx.state!=='running'){
         try{ ctx.resume(); }catch(e){}
         let tries=0;
         (function waitRun(){
@@ -209,7 +211,7 @@ const Sfx = (function(){
       // 时长砍回 0.05s(跟手不拖沓),音量 0.85(沉闷但听得到)
       const emit=()=>{ try{ f.forEach((freq,i)=>tone(freq, i*0.01, 0.05, 'sine', 0.85)); }catch(e){} };
       // 与 play() 同样的解锁兼底:ctx 还 suspended 时轮询等变 running 再发,否则 oscillator 被静音丢弃
-      if(ctx.state==='suspended'){
+      if(ctx.state!=='running'){
         try{ ctx.resume(); }catch(e){}
         let tries=0;
         (function waitRun(){
@@ -222,4 +224,12 @@ const Sfx = (function(){
     }
   };
 })();
+// 页面重新可见/获焦时主动 resume(系统静置挂起 ctx 后,切回页面自动唤醒,双保险)
+// 注意:不能调 unlock(有 unlocked 守卫会直接return),用 Sfx.resumeNow() 强制 resume
+try{
+  var __wake=function(){ try{ if(window.Sfx&&Sfx.resumeNow) Sfx.resumeNow(); }catch(e){} };
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) __wake(); }, {passive:true});
+  window.addEventListener('focus', __wake, {passive:true});
+  window.addEventListener('pageshow', __wake, {passive:true});
+}catch(e){}
 window.Sfx = Sfx;  // 显式挂全局,让 if(window.Sfx) 检查能过
