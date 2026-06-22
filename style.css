@@ -121,7 +121,7 @@
   .dm2-left,.dm2-right{font-size:13px;font-weight:700;color:var(--ink-soft);min-width:34px;}
   .dm2-left{text-align:right;} .dm2-right{text-align:left;}
   .dm2-track{flex:1;height:6px;background:var(--line);border-radius:4px;position:relative;}
-  .dm2-fill{position:absolute;top:0;height:100%;background:var(--accent-c,#b8860b);opacity:.3;border-radius:4px;}
+  .dm2-fill{position:absolute;top:0;height:100%;background:var(--mc,#b8860b);opacity:.3;border-radius:4px;}
   .dm2-track::before{content:"";position:absolute;left:50%;top:-3px;width:1px;height:12px;background:var(--ink-faint);opacity:.4;}
   .dm2-dot{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;background:var(--mc,#b8860b);border:2px solid var(--paper);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.2);}
   .cover-btns{display:flex;flex-direction:column;gap:13px;align-items:center;}
@@ -249,18 +249,22 @@
 
   /* 结局/分享卡 */
   #ending{padding:46px 0 20px;}
-  .share-card{background:var(--paper);border:1px solid var(--line);padding:42px 32px 36px;position:relative;overflow:hidden;}
-  .share-card::after{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--accent-c,#b8860b);}
+  /* 结局卡:整体背景随等级变(同色系浅底)+顶部等级色光晕渐变氛围 */
+  .share-card{background:var(--ending-bg,#f5f1e8);border:1px solid var(--accent-c,#b8860b);padding:42px 32px 36px;position:relative;overflow:hidden;box-shadow:0 8px 30px var(--ending-glow,rgba(184,134,11,.1));}
+  /* 顶部等级色光晕(从顶部渐隐到透明,渲染等级氛围) */
+  .share-card::before{content:"";position:absolute;top:0;left:0;right:0;height:140px;background:radial-gradient(ellipse at 50% 0%,var(--ending-glow,rgba(184,134,11,.1)) 0%,transparent 70%);pointer-events:none;z-index:0;}
+  .share-card::after{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--accent-c,#b8860b);z-index:1;}
+  .share-card>*{position:relative;z-index:1;}
   .sc-head{text-align:center;margin-bottom:28px;}
   .sc-head .emoji{font-size:58px;line-height:1;margin-bottom:12px;}
-  .sc-head .rank-label{font-size:12px;letter-spacing:.3em;color:var(--ink-faint);margin-bottom:12px;font-weight:600;}
+  .sc-head .rank-label{font-size:12px;letter-spacing:.3em;color:var(--accent-c,#b8860b);opacity:.75;margin-bottom:12px;font-weight:700;}
   .sc-head h1{font-family:"Kaiti SC","STKaiti","Songti SC",serif;font-size:clamp(26px,7vw,42px);font-weight:900;letter-spacing:.03em;line-height:1.2;color:var(--accent-c,#b8860b);}
   .sc-quote{text-align:center;font-style:italic;font-size:15px;color:var(--ink-soft);line-height:2;max-width:540px;margin:0 auto 28px;padding:0 10px;}
   .sc-summary{font-size:14.5px;color:var(--ink);line-height:2.1;text-align:left;text-indent:2em;max-width:620px;margin:0 auto 30px;}
   .sc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:22px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:26px;}
   .sc-stats .fs{text-align:center;}
   .sc-stats .fs .k{font-size:11px;color:var(--ink-faint);margin-bottom:5px;}
-  .sc-stats .fs .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .sc-stats .fs .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--accent-c,#b8860b);}
   .sc-highlights{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
   .hl-box{border:1px solid var(--line);padding:15px;border-radius:3px;}
   .hl-box .t{font-size:12px;font-weight:700;margin-bottom:7px;}

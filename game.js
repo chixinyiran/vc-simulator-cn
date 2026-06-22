@@ -575,7 +575,7 @@ function showEnding(healthDead){
   const winCnt=fullHistory.filter(h=>h.tier==='SS'||h.tier==='S').length;
   const loseCnt=fullHistory.filter(h=>h.tier==='C'||h.tier==='B').length;
   el.innerHTML=`
-    <div class="share-card" id="shareCard" style="--accent-c:${meta.color}">
+    <div class="share-card" id="shareCard" style="--accent-c:${meta.color};--ending-bg:${meta.bg||'#f5f1e8'};--ending-glow:${meta.glow||'rgba(184,134,11,.1)'}">
       <div class="sc-head"><div class="emoji">${meta.emoji}</div><div class="rank-label">二 十 六 年 · 终 局</div><h1>${meta.title}</h1></div>
       <div class="sc-quote">「${meta.quote}」</div>
       <div class="sc-summary">${meta.summary}</div>
