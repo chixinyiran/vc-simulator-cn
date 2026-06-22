@@ -7,7 +7,7 @@ const CONFIG = {
   start: { aum:100, track:100, network:100, health:100, luck:50 },
 
   // 属性条最大值（用于UI进度条归一化，不是硬上限）
-  statMax: { aum:1000, track:580, network:430, luck:100, health:100 },
+  statMax: { aum:1200, track:1900, network:750, luck:100, health:100 },
 
   // 5档结果对应的属性变动倍率 + 显示样式
   outcomeTiers: {
@@ -58,14 +58,10 @@ const CONFIG = {
 
   // 健康死亡相关
   healthDeath: {
-    earlyOutTrackCap: 360,   // 健康死亡且业绩低于此 → 触发"健康透支"特殊结局
+    earlyOutTrackCap: 800,   // 健康死亡且业绩低于此 → 触发"健康透支"特殊结局
   },
 
   // === 综合评分（五属性归一化构成1000分，2026-06-21重设计）===
-  // 每项得分 = min(1,(当前值/scoreTarget)^scoreGamma) * scoreWeight；累加满1000
-  scoreTarget: { track:580, aum:1000, network:430, luck:85, health:68 },
-  scoreWeight: { track:340, aum:240, network:150, luck:110, health:160 }, // 合计1000
-  scoreGamma: 0.83,
   // === 净值线性评分(2026-06-22重构)===  综合分 = (资本-100-累计投入)*a + (业绩-100)*b + (人脉-100)*c
   // 系数 a:b:c 守 资本:业绩:人脉=2:3:1 的"对分贡献",并经模拟反解让满分落1000+命中档位比例
   scoreCoef: { a: 0.206, b: 0.309, c: 0.103 },  // 资本:业绩:人脉=2:3:1, 模拟反解满分落1000
