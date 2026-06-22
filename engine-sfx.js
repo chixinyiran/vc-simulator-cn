@@ -195,7 +195,7 @@ const Sfx = (function(){
         opt:    [1320],        // 题目选项:偏低高音(柔和)
         icon:   [2349],        // 图标钮:高频点(清脆)
       }[kind]||[1760];
-      f.forEach((freq,i)=>tone(freq, i*0.012, 0.06, 'sine', 0.10));
+      f.forEach((freq,i)=>tone(freq, i*0.012, 0.06, 'sine', 0.30));
     }
   };
 })();
