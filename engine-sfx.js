@@ -150,9 +150,15 @@ const Sfx = (function(){
     // 播一个极轻的静默音“唤醒”音频管线
     if(ctx){ try{ const o=ctx.createOscillator(),g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.02);}catch(e){} }
   }
+  // 轻量提前 resume:不受 unlocked 守卫限制,每次交互都顺手 resume ctx
+  // 作用:页面静置后 ctx 挂起,用户手指一按下就立即 resume,等松手触发音效时 ctx 已 running→即时发声不滞后
+  function eagerResume(){ try{ if(ctx && ctx.state!=='running'){ ctx.resume(); } }catch(e){} }
   try{
-    ['pointerdown','touchstart','click','keydown'].forEach(ev=>
+    ['pointerdown','touchstart','keydown'].forEach(ev=>
       document.addEventListener(ev, unlock, {once:false, passive:true, capture:true}));
+    // pointerdown/pointermove 提前唤醒(滞后修复:点击前ctx就开始resume)
+    ['pointerdown','pointermove','touchstart','keydown'].forEach(ev=>
+      document.addEventListener(ev, eagerResume, {once:false, passive:true, capture:true}));
   }catch(e){}
 
   return {
