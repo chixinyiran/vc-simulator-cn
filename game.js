@@ -185,6 +185,7 @@ function startGame(){
   clearProgress();
   resetTheme();
   state={...GAME.start};
+  state.spent=0;  // 累计投入(方案A:资本照常涨,评分时减此值体现钱花出去了)
   upPicks=0;
   pIdx=0; rIdx=0; selDeal=null; stagedThisPeriod=[]; fullHistory=[]; gameOver=false;
   mbti={risk:0,mind:0};
@@ -338,8 +339,18 @@ function trendLabel(t){
 function showChoices(preselectIdx){
   if(window.Sfx)Sfx.play('swipe');
   const r=GAME.periods[pIdx].rounds[rIdx]; selDeal=null;
-  // 防死局：若所有项目都投不起，把门槛最低的项目标记为"可小额参投"(回报减半)
-  const anyAfford = r.deals.some(d=>state.aum>=d.minAUM);
+  // 健康门槛锁定(确定性:同站多次渲染结果一致). 实际门槛=minHealth - (运气-50)/50*15 - 站内确定扰动(0~10)
+  // 运气高→门槛降→更易投得起; 扰动让每局/每站锁的项目不同,避免人人必锁同一个
+  const healthLock=r.deals.map((d,i)=>{
+    if(!d.minHealth) return false;
+    // 确定性扰动:用 pIdx*100+rIdx*10+i 做种子,取0~10
+    const seed=(pIdx*131+rIdx*17+i*7)%11;
+    const luckRelief=((state.luck-50)/50)*15;
+    const realTh=d.minHealth - luckRelief - seed;
+    return state.health < realTh;  // 健康不足→锁
+  });
+  // 防死局：若所有项目都投不起(资本+健康双门槛后),把资本门槛最低的标记为可小额参投
+  const anyAfford = r.deals.some((d,i)=>state.aum>=d.minAUM && !healthLock[i]);
   let smallTicketIdx = -1;
   if(!anyAfford){
     let minM=1e9;
@@ -348,8 +359,9 @@ function showChoices(preselectIdx){
   let cards=r.deals.map((d,i)=>{
     const [ti,tl]=trendLabel(d.trend);
     const small = (i===smallTicketIdx);
-    const afford = state.aum>=d.minAUM || small;
-    const lockNote = !afford ? `<div class="lock-note">${CONFIG.text.lockNoAum}</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:'');
+    const hLock = healthLock[i];
+    const afford = (state.aum>=d.minAUM && !hLock) || (small && !hLock);
+    const lockNote = hLock ? `<div class="lock-note" style="color:var(--bad)">精力不足</div>` : (!afford ? `<div class="lock-note">${CONFIG.text.lockNoAum}</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:''));
     return `
     <div class="deal ${afford?'':'locked'}" data-i="${i}" ${afford?`onclick="pickDeal(${i})"`:''}>
       ${afford&&!small?'<div class="pick-tag">✓</div>':lockNote}
@@ -390,8 +402,9 @@ function confirmDeal(){
   const small = (selDeal===window._smallTicketIdx);
   // 投资选择按 trend 暗含性格倾向，累积 MBTI 分
   const tm2=TREND_MBTI[d.trend]; if(tm2){for(const k in tm2)mbti[k]+=tm2[k];}
-  // 即时只扣投入(占用资本)，结果期末揭晓。先记录这笔押注。
-  stagedThisPeriod.push({year:r.year, deal:d, tag:d.tag, name:d.name, small});
+  // 记累计投入(方案A:不扣资本数值,仅记录,评分时减)
+  state.spent=(state.spent||0)+(d.amt||0);
+  stagedThisPeriod.push({year:r.year, deal:d, tag:d.tag, name:d.name, small, amt:d.amt||0});
   // 显示"已封存"页（提供重选入口，未揭晓前可反悔）
   $content.innerHTML=`
     <div class="staged">
@@ -411,6 +424,7 @@ function undoStaged(){
   if(window.Sfx)Sfx.play('click');
   if(!stagedThisPeriod.length) return;
   const last=stagedThisPeriod.pop();
+  state.spent=Math.max(0,(state.spent||0)-(last.amt||last.deal.amt||0));  // 撤销:投入加回来
   const tm=TREND_MBTI[last.deal.trend]; if(tm){for(const k in tm)mbti[k]-=tm[k];}
   selDeal=null; saveProgress();
   const r=GAME.periods[pIdx].rounds[rIdx];
@@ -428,11 +442,11 @@ function advance(){
 function rollOutcome(d){
   if(d.trend==='safe') return 'A';
   const P=CONFIG.probability;
-  let luckBonus=(state.luck-CONFIG.start.luck)*P.luckPerPoint;
-  luckBonus=clamp(luckBonus,P.luckClamp.min,P.luckClamp.max);
-  const dice=Math.random();
+  // 运气影响胜率: 实际胜率 = clamp(base + (运气-50)/50 * luckEffect, 0, 1)
+  const luckAdj=((state.luck-50)/50)*(CONFIG.luckEffect||0.3);
   const tb=(P.trendBoost&&P.trendBoost[d.trend])||0;
-  let p=clamp(d.base+P.baseAdjust+luckBonus+tb,P.baseClamp.min,P.baseClamp.max);
+  let p=clamp(d.base+luckAdj+tb, 0, 1);
+  const dice=Math.random();
   const perf=p*P.perfWeight.base+(1-dice)*P.perfWeight.dice;
   if(perf>=P.tierCuts.SS) return 'SS';
   if(perf>=P.tierCuts.S)  return 'S';
@@ -540,16 +554,15 @@ function mbtiDimBars(){
   };
 }
 function calcScore(){
-  // 五属性归一化评分(2026-06-21重设计)：每项 min(1,(值/目标)^gamma)*权重，累加满1000
-  const T=CONFIG.scoreTarget, W=CONFIG.scoreWeight, g=CONFIG.scoreGamma;
-  let s=0;
-  for(const k in W){
-    const v=Math.max(0, state[k]||0);
-    const r=Math.min(1, Math.pow(v/T[k], g));
-    s+=r*W[k];
-  }
-  if(state.health<=0) s*=CONFIG.deadPenalty;        // 健康归零出局打折
-  return Math.round(s);
+  // 净值线性评分(2026-06-22重构): 总分 = (资本-100-累计投入)*a + (业绩-100)*b + (人脉-100)*c
+  const C=CONFIG.scoreCoef;
+  const spent=state.spent||0;
+  const aumNet=Math.max(0,(state.aum||0)-100-spent);
+  const trackNet=Math.max(0,(state.track||0)-100);
+  const netNet=Math.max(0,(state.network||0)-100);
+  let s=aumNet*C.a + trackNet*C.b + netNet*C.c;
+  if(state.health<=0) s*=CONFIG.deadPenalty;
+  return Math.round(Math.max(0, Math.min(CONFIG.scoreClampMax||1000, s)));
 }
 function pickEnding(score,healthDead){
   if(healthDead && state.track<CONFIG.healthDeath.earlyOutTrackCap) return GAME.endingMeta.earlyout;

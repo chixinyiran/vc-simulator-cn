@@ -65,10 +65,16 @@ const CONFIG = {
   // 每项得分 = min(1,(当前值/scoreTarget)^scoreGamma) * scoreWeight；累加满1000
   scoreTarget: { track:580, aum:1000, network:430, luck:85, health:68 },
   scoreWeight: { track:340, aum:240, network:150, luck:110, health:160 }, // 合计1000
-  scoreGamma: 0.83,        // 平滑曲线指数(未达目标也能拿大部分分)
+  scoreGamma: 0.83,
+  // === 净值线性评分(2026-06-22重构)===  综合分 = (资本-100-累计投入)*a + (业绩-100)*b + (人脉-100)*c
+  // 系数 a:b:c 守 资本:业绩:人脉=2:3:1 的"对分贡献",并经模拟反解让满分落1000+命中档位比例
+  scoreCoef: { a: 0.206, b: 0.309, c: 0.103 },  // 资本:业绩:人脉=2:3:1, 模拟反解满分落1000
+  scoreClampMax: 1000,                          // 总分上限
+  // 运气影响胜率: 实际胜率 = clamp(base + (运气-50)/50 * luckEffect, 0, 1)
+  luckEffect: 0.3,        // 平滑曲线指数(未达目标也能拿大部分分)
   deadPenalty: 0.6,        // 健康归零时总分打折(唯一权威值,calcScore 引用)
   // 结局音效门槛(跟 endingTiers 对齐:winBig=封神/一线传奇, winMid=资深/稳进, neutral=过山车, 以下lose)
-  scoreTiersForSfx: { big: 665, mid: 415, neutral: 335 },
+  scoreTiersForSfx: { big: 540, mid: 270, neutral: 150 },
 
   // 小额参投(资本不够时兜底)回报系数
   smallTicketFactor: 0.5,
