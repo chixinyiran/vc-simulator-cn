@@ -56,7 +56,7 @@
   </div>
 </div>
 
-<script src="engine-sfx.js?v=20260623m"></script>
+<script src="engine-sfx.js?v=20260623n"></script>
 <script>
 // 分组定义。type: 'play'=Sfx.play(name); 'hover'=Sfx.playHover(kind)
 const GROUPS=[
@@ -124,11 +124,19 @@ function makeMusicRow(file,label,ds){
     if(bgmPlaying===row){ stopBgm(); return; }
     stopBgm();
     if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-    bgmAudio.src='audio/'+file+'?v=20260623m';
+    bgmAudio.src='audio/'+file+'?v=20260623n';
     bgmAudio.play().catch(()=>{});
     row.classList.add('playing'); bgmPlaying=row;
   }catch(e){} };
   return row;
+}
+function musicGroupNamed(title, suffix, names){
+  const g=document.createElement('div'); g.className='grp';
+  g.innerHTML='<div class="grp-t">'+title+'</div>';
+  ['P1','P2','P3','P4','P5'].forEach(function(k){
+    g.appendChild(makeMusicRow(k+suffix+'.mp3', TIMES[k], '改编自《'+names[k]+'》'));
+  });
+  list.appendChild(g);
 }
 function musicGroup(title, suffix, ds){
   const g=document.createElement('div'); g.className='grp';
@@ -138,11 +146,16 @@ function musicGroup(title, suffix, ds){
   });
   list.appendChild(g);
 }
-// 真实音乐改编(主人选定方向)放最前,其余作对比
-musicGroup('🎵 背景音乐 · 真实音乐改编（推荐）','r','真实纯音乐演奏剪辑 · 音质最佳');
-musicGroup('🎵 背景音乐 · 手作A（五声中国风）','v2','古筝/笛/弦乐 · 五声音阶');
-musicGroup('🎵 背景音乐 · 手作B（轻柔现代）','v3','钢琴/pad治愈系');
-musicGroup('🎵 背景音乐 · 旧版（对比用）','','原中国风轻音乐');
+// 时代代表选曲(主人要的:按时代选标志性曲目)2版 + 之前的原版 + 手作对比
+const NAMES_S1={P1:'老鼠爱大米',P2:'青花瓷',P3:'最炫民族风',P4:'海阔天空',P5:'赛博朋克电子'};
+const NAMES_S2={P1:'2002年的第一场雪',P2:'七里香',P3:'小苹果',P4:'孤勇者',P5:'Time·Inception'};
+const NAMES_R={P1:'清晨',P2:'天空之城',P3:'起风了',P4:'夜空中最亮的星',P5:'Time·HansZimmer'};
+musicGroupNamed('🎵 时代代表 · 选曲1','s1',NAMES_S1);
+musicGroupNamed('🎵 时代代表 · 选曲2','s2',NAMES_S2);
+musicGroupNamed('🎵 真实改编 · 原版(第一版)','r',NAMES_R);
+musicGroup('🎵 手作A(五声中国风)','v2','古筝/笛/弦乐');
+musicGroup('🎵 手作B(轻柔现代)','v3','钢琴/pad');
+musicGroup('🎵 旧版(对比用)','','原中国风轻音乐');
 // 整页首次触摸/点击即解锁
 ['pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{try{window.Sfx&&Sfx.unlock();}catch(e){}},{once:true,passive:true}));
 
