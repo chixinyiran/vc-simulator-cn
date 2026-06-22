@@ -56,7 +56,7 @@
   </div>
 </div>
 
-<script src="engine-sfx.js?v=20260623l"></script>
+<script src="engine-sfx.js?v=20260623m"></script>
 <script>
 // 分组定义。type: 'play'=Sfx.play(name); 'hover'=Sfx.playHover(kind)
 const GROUPS=[
@@ -124,7 +124,7 @@ function makeMusicRow(file,label,ds){
     if(bgmPlaying===row){ stopBgm(); return; }
     stopBgm();
     if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-    bgmAudio.src='audio/'+file+'?v=20260623l';
+    bgmAudio.src='audio/'+file+'?v=20260623m';
     bgmAudio.play().catch(()=>{});
     row.classList.add('playing'); bgmPlaying=row;
   }catch(e){} };
@@ -138,10 +138,11 @@ function musicGroup(title, suffix, ds){
   });
   list.appendChild(g);
 }
-// 三组独立:新版v2(五声中国风) / 新版v3(轻柔现代) / 旧版
-musicGroup('🎵 背景音乐 · 新版A（五声中国风）','v2','古筝/笛/弦乐 · 五声音阶,各时代情绪');
-musicGroup('🎵 背景音乐 · 新版B（轻柔现代）','v3','钢琴/pad治愈系 · 柔和好听');
-musicGroup('🎵 背景音乐 · 旧版（原版,对比用）','','原中国风轻音乐');
+// 真实音乐改编(主人选定方向)放最前,其余作对比
+musicGroup('🎵 背景音乐 · 真实音乐改编（推荐）','r','真实纯音乐演奏剪辑 · 音质最佳');
+musicGroup('🎵 背景音乐 · 手作A（五声中国风）','v2','古筝/笛/弦乐 · 五声音阶');
+musicGroup('🎵 背景音乐 · 手作B（轻柔现代）','v3','钢琴/pad治愈系');
+musicGroup('🎵 背景音乐 · 旧版（对比用）','','原中国风轻音乐');
 // 整页首次触摸/点击即解锁
 ['pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{try{window.Sfx&&Sfx.unlock();}catch(e){}},{once:true,passive:true}));
 
