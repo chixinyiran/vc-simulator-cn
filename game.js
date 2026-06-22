@@ -346,11 +346,7 @@ function showChoices(preselectIdx){
     const g=d.gate; if(!g) return 0;
     if(g.type==='aum')   return state.aum   < g.min ? 'aum'   : 0;
     if(g.type==='track') return state.track < g.min ? 'track' : 0;
-    if(g.type==='health'){
-      const seed=(pIdx*131+rIdx*17+i*7)%11;
-      const relief=((state.luck-50)/50)*8;
-      return state.health < (g.min - relief - seed) ? 'health' : 0;
-    }
+    if(g.type==='health') return state.health < g.min ? 'health' : 0;  // 硬门槛:所见即所得(健康<显示门槛就锁)
     return 0;
   });
   // 防死局铁律1：全锁 → 强制解锁"门槛最低"的1个(总能投点什么)
