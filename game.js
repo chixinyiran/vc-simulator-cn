@@ -341,7 +341,7 @@ function showChoices(preselectIdx){
   const r=GAME.periods[pIdx].rounds[rIdx]; selDeal=null;
   // 健康门槛锁定(确定性:同站多次渲染结果一致). 实际门槛=minHealth - (运气-50)/50*15 - 站内确定扰动(0~10)
   // 运气高→门槛降→更易投得起; 扰动让每局/每站锁的项目不同,避免人人必锁同一个
-  const healthLock=r.deals.map((d,i)=>{
+  let healthLock=r.deals.map((d,i)=>{
     if(!d.minHealth) return false;
     // 确定性扰动:用 pIdx*100+rIdx*10+i 做种子,取0~10
     const seed=(pIdx*131+rIdx*17+i*7)%11;
@@ -349,19 +349,27 @@ function showChoices(preselectIdx){
     const realTh=d.minHealth - luckRelief - seed;
     return state.health < realTh;  // 健康不足→锁
   });
-  // 防死局：若所有项目都投不起(资本+健康双门槛后),把资本门槛最低的标记为可小额参投
+  // 防死局铁律1：所有项目都被健康锁 → 强制解锁健康门槛最低的1个(精力再差也总能投点什么)
+  if(healthLock.every(x=>x)){
+    let minH=1e9, unlockIdx=0;
+    r.deals.forEach((d,i)=>{ const mh=d.minHealth||0; if(mh<minH){minH=mh;unlockIdx=i;} });
+    healthLock[unlockIdx]=false;
+  }
+  // 防死局铁律2：在"未被健康锁"的项目里,看有没有资本投得起的;都投不起→把"未健康锁且资本门槛最低"的标记为可小额参投
   const anyAfford = r.deals.some((d,i)=>state.aum>=d.minAUM && !healthLock[i]);
   let smallTicketIdx = -1;
   if(!anyAfford){
     let minM=1e9;
-    r.deals.forEach((d,i)=>{ if(d.minAUM<minM){minM=d.minAUM;smallTicketIdx=i;} });
+    r.deals.forEach((d,i)=>{ if(!healthLock[i] && d.minAUM<minM){minM=d.minAUM;smallTicketIdx=i;} });
+    // 极端兜底:万一(理论不会)没选到,强制第一个未锁项
+    if(smallTicketIdx<0){ smallTicketIdx=healthLock.findIndex(x=>!x); if(smallTicketIdx<0)smallTicketIdx=0; }
   }
   let cards=r.deals.map((d,i)=>{
     const [ti,tl]=trendLabel(d.trend);
     const small = (i===smallTicketIdx);
     const hLock = healthLock[i];
     const afford = (state.aum>=d.minAUM && !hLock) || (small && !hLock);
-    const lockNote = hLock ? `<div class="lock-note" style="color:var(--bad)">精力不足</div>` : (!afford ? `<div class="lock-note">${CONFIG.text.lockNoAum}</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:''));
+    const lockNote = hLock ? `<div class="lock-note" style="color:var(--bad)">⚡ 精力不足（需健康 ${d.minHealth}+）</div>` : (!afford ? `<div class="lock-note">💰 资本不足（需 ${d.minAUM}M）</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:''));
     return `
     <div class="deal ${afford?'':'locked'}" data-i="${i}" ${afford?`onclick="pickDeal(${i})"`:''}>
       ${afford&&!small?'<div class="pick-tag">✓</div>':lockNote}
