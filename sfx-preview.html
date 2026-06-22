@@ -41,7 +41,7 @@
   </div>
 </div>
 
-<script src="engine-sfx.js?v=20260623g"></script>
+<script src="engine-sfx.js?v=20260623h"></script>
 <script>
 // 分组定义。type: 'play'=Sfx.play(name); 'hover'=Sfx.playHover(kind)
 const GROUPS=[
@@ -98,33 +98,39 @@ GROUPS.forEach(g=>{
   list.appendChild(grp);
 });
 
-// ===== 背景音乐试听(5首,各时代一首,可对比听) =====
-const BGM=[
-  {f:'P1',nm:'Ⅰ 门户与泡沫',ds:'2000-2004 · 竹笛主调,世纪初的青涩与躁动'},
-  {f:'P2',nm:'Ⅱ Web2.0觉醒',ds:'2005-2009 · 古筝铺陈,流量时代的萌动'},
-  {f:'P3',nm:'Ⅲ 移动互联网',ds:'2010-2015 · 二胡递进,百团大战的激越'},
-  {f:'P4',nm:'Ⅳ 硬科技时代',ds:'2016-2022 · 小号昂扬,国之重器的厚重'},
-  {f:'P5',nm:'Ⅴ AI新纪元',ds:'2023-2026 · 管钟恢弘,奇点降临的辽阔'},
-];
+// ===== 背景音乐 · 新旧对比试听 =====
+// 新版=按时代情绪重做(P1悬疑/P2轻快/P3强劲/P4宏大/P5空灵),旧版=原中国风轻音乐(同质化)
+const BGM_INFO={
+  P1:{nm:'Ⅰ 门户与泡沫(2000-2004)', xnew:'悬疑紧张 · 低音区缓慢不安',  xold:'轻音乐 · 竹笛主调躁动'},
+  P2:{nm:'Ⅱ Web2.0觉醒(2005-2009)', xnew:'轻快上扬 · 大调跳跃明亮',  xold:'轻音乐 · 古筝铺陈萌动'},
+  P3:{nm:'Ⅲ 移动互联网(2010-2015)', xnew:'节奏强劲 · 电子驱动有力',  xold:'轻音乐 · 二胡激越'},
+  P4:{nm:'Ⅳ 硬科技时代(2016-2022)', xnew:'宏大厚重 · 铜管弦乐齐奏',  xold:'轻音乐 · 小号昂扬'},
+  P5:{nm:'Ⅴ AI新纪元(2023-2026)',   xnew:'科技空灵 · 合成pad悬浮',     xold:'轻音乐 · 管钟辽阔'}
+};
 let bgmAudio=null, bgmPlaying=null;
-function stopBgm(){ if(bgmAudio){bgmAudio.pause();bgmAudio.currentTime=0;} if(bgmPlaying){bgmPlaying.querySelector('.play').textContent='\u25b6';bgmPlaying=null;} }
-const mgrp=document.createElement('div'); mgrp.className='grp';
-mgrp.innerHTML='<div class="grp-t">\ud83c\udfb5 \u80cc\u666f\u97f3\u4e50\uff085\u9996\u00b7\u53ef\u5bf9\u6bd4\u542c\uff09</div>';
-BGM.forEach(b=>{
+function stopBgm(){ if(bgmAudio){bgmAudio.pause();bgmAudio.currentTime=0;} if(bgmPlaying){bgmPlaying.querySelector('.play').textContent='▶';bgmPlaying=null;} }
+function makeMusicRow(file, label, ds){
   const row=document.createElement('div'); row.className='row';
-  row.innerHTML=`<div class="play">\u25b6</div><div class="info"><div class="nm">${b.nm}</div><div class="ds">${b.ds}</div></div>`;
+  row.innerHTML=`<div class="play">▶</div><div class="info"><div class="nm">${label}</div><div class="ds">${ds}</div></div>`;
   row.onclick=()=>{
     try{
-      if(bgmPlaying===row){ stopBgm(); return; }   // 再点同一首=停止
+      if(bgmPlaying===row){ stopBgm(); return; }
       stopBgm();
       if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-      bgmAudio.src='audio/'+b.f+'.mp3?v=20260623g';
+      bgmAudio.src='audio/'+file+'?v=20260623h';
       bgmAudio.play().catch(()=>{});
-      row.querySelector('.play').textContent='\u23f8';   // 暂停图标
+      row.querySelector('.play').textContent='⏸';
       bgmPlaying=row;
     }catch(e){}
   };
-  mgrp.appendChild(row);
+  return row;
+}
+const mgrp=document.createElement('div'); mgrp.className='grp';
+mgrp.innerHTML='<div class="grp-t">🎵 背景音乐 · 新旧对比试听（✨新版=按时代情绪重做）</div>';
+['P1','P2','P3','P4','P5'].forEach(k=>{
+  const info=BGM_INFO[k];
+  mgrp.appendChild(makeMusicRow(k+'new.mp3', '✨ '+info.nm+' · 新版', info.xnew));
+  mgrp.appendChild(makeMusicRow(k+'.mp3',    '   '+info.nm+' · 旧版', info.xold));
 });
 list.appendChild(mgrp);
 // 整页首次触摸/点击即解锁
