@@ -185,7 +185,7 @@
   .choice-head{text-align:center;padding:36px 0 6px;}
   .choice-head h2{font-family:"Kaiti SC","STKaiti","Songti SC",serif;font-size:clamp(24px,7vw,36px);font-weight:900;letter-spacing:.05em;margin-bottom:10px;}
   .choice-head p{font-size:13px;color:var(--ink-faint);}
-  .choice-head .pending{font-size:12px;color:var(--warn);margin-top:6px;}
+  .choice-head .pending{font-size:12px;color:var(--accent);margin-top:6px;}
   .deals{display:flex;flex-direction:column;margin:24px 0 8px;}
   .deal{border:1px solid var(--line);border-radius:2px;padding:20px;margin-bottom:15px;cursor:pointer;background:var(--card);transition:all .2s ease;position:relative;}
   /* 按下态(手机touch瞬间反馈):主题色描边+轻缩 */
