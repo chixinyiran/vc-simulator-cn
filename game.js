@@ -683,8 +683,38 @@ function renderShareQR(){
   try{
     var box=document.getElementById('scQr'); if(!box||typeof QRCode==='undefined') return;
     box.innerHTML='';
-    var url=(window.location && window.location.href) ? window.location.href.split('#')[0] : 'https://chixinyiran.github.io/vc-simulator/';
-    new QRCode(box, { text:url, width:72, height:72, colorDark:'#1a1714', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+    // 二维码固定指向公网稳定地址(不用当前域,避免妙搭域名/301跳转扫不出),带上该局 ref/名字
+    var pub='https://slzcn.github.io/vc-simulator/';
+    var id=(typeof getPlayerId==='function')?getPlayerId():'';
+    var nm=(typeof getPlayerName==='function')?getPlayerName():'';
+    var target=pub+'?ref='+encodeURIComponent(id||'');
+    if(nm) target+='&n='+encodeURIComponent(nm);
+    // 用本地 qrcodejs 生成(不跨域),底层位图 240 提清晰度,纠错级 H
+    new QRCode(box, { text:target, width:240, height:240, colorDark:'#1a1714', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.H });
+    // 【关键修复】qrcodejs 生成的码四周没有静默区(quiet zone),扫码器/微信长按难识别。
+    // 生成后用 canvas 给位图四周加足够白边后重新入画。
+    setTimeout(function(){
+      try{
+        var node=box.querySelector('img,canvas'); if(!node) return;
+        var src=(node.tagName==='IMG')?node.src:node.toDataURL('image/png');
+        var im=new Image();
+        im.onload=function(){
+          var q=Math.round(im.width*0.16); // 白边=码宽的16%(超过规范最小4模块要求,确保能识别)
+          var size=im.width+q*2;
+          var cv=document.createElement('canvas'); cv.width=size; cv.height=size;
+          var ctx=cv.getContext('2d');
+          ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,size,size);
+          ctx.drawImage(im,q,q,im.width,im.height);
+          box.innerHTML='';
+          var out=document.createElement('img');
+          out.src=cv.toDataURL('image/png');
+          out.alt='扫码试玩'; out.style.display='block';
+          out.style.width='76px'; out.style.height='76px';
+          box.appendChild(out);
+        };
+        im.src=src;
+      }catch(e){}
+    }, 30);
   }catch(e){ /* 二维码生成失败不影响长图 */ }
 }
 
