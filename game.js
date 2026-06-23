@@ -612,7 +612,7 @@ function showEnding(healthDead){
       </div>
       <div class="mbti-block" id="mbtiBlock"></div>
       <div class="sc-record" id="scRecord"><h3>— 二十六年投资轨迹 —</h3>${recRows}</div>
-      <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">中国创业投资模拟器 · <b>2000—2026</b> · 🦞 小龙虾出品<div class="qr-tip">长按扫码走一遍你的投资人生 · 仅供娱乐</div></div></div>
+      <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">中国创业投资模拟器 · <b>2000—2026</b> ·<br>🦞 小龙虾出品<div class="qr-tip">长按扫码走一遍你的投资人生 · 仅供娱乐</div></div></div>
     </div>
     <div class="share-actions">
       <button class="btn" onclick="genImage()"><span class="btn-ic">${IC_CAMERA}</span>${CONFIG.text.genImage}</button>
@@ -709,7 +709,7 @@ function renderShareQR(){
           var out=document.createElement('img');
           out.src=cv.toDataURL('image/png');
           out.alt='扫码试玩'; out.style.display='block';
-          out.style.width='80px'; out.style.height='80px';
+          // 尺寸交由 CSS 控制(.sc-qr img),便于手机媒体查询缩小;不再内联写死
           box.appendChild(out);
         };
         im.src=src;

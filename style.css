@@ -309,6 +309,9 @@
     .share-card{padding:30px 18px 28px;}
     .sc-stats{grid-template-columns:repeat(2,1fr);gap:16px 12px;}
     .sc-highlights{grid-template-columns:1fr;}
+    /* 手机端二维码缩小:64×64,给右侧文案更多宽度(刚好三行)+整体更精致 */
+    .sc-foot .sc-qr{width:64px;height:64px;}
+    .sc-foot .sc-qr img,.sc-foot .sc-qr canvas{width:64px!important;height:64px!important;}
   }
 
 /* ===== 下滑提示 + 介绍首页 ===== */
