@@ -113,7 +113,9 @@ function viewLastResult(){
   $game.classList.add('hidden');
   const el=$ending; el.classList.remove('hidden');
   el.innerHTML=r.html;
-  // 重新挂载渲染(MBTI block 已在html里)
+  // 二维码是当初异步生成的(canvas像素+延迟加白边)，存进 localStorage 的 html 里是空壳，
+  // 回看时必须现场重新生成，否则二维码区空白。
+  renderShareQR();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 // 封面初始化：检测存档，动态加按钮
