@@ -116,6 +116,7 @@
 <script src="config.js?v=20260623k"></script>
 <script src="data-periods.js?v=20260623k"></script>
 <script src="data-endings.js?v=20260623k"></script>
+<script src="data-mbti.js?v=20260623k"></script>
 <script>
 "use strict";
 var RUNS=10000;
@@ -202,6 +203,72 @@ function renderConfig(){
   h+='<div class="panel"><h2>🖼 封面与通用 UI 文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.ui</span></h2>';
   h+=kvTable(C.ui)+'</div>';
 
+  // 结局称号完整文案(从 data-endings.js 动态读)
+  if(typeof DATA_ENDINGS!=="undefined" && DATA_ENDINGS.endingMeta){
+    var EM=DATA_ENDINGS.endingMeta, ET=DATA_ENDINGS.endingTiers;
+    var eorder=["legend","master","veteran","steady","rollercoaster","exit","earlyout"];
+    h+='<div class="panel"><h2>\u{1F3C6} 结局称号完整文案 <span style="font-size:11px;color:#8c857a;font-weight:600">data-endings.js</span></h2>';
+    eorder.forEach(function(k){
+      var m=EM[k]; if(!m)return;
+      var to=ET.find(function(t){return t.key===k;});
+      var cut=(k==="earlyout")?"健康归零且业绩偏低":(to?("综合评分 \u2265 "+to.min):"");
+      var col=esc(m.color||"#b8860b");
+      h+='<div class="formula" style="border-left-color:'+col+'">';
+      h+='<b style="color:'+col+';font-size:14px">'+esc(m.emoji)+" "+esc(m.title)+'</b>';
+      if(cut)h+='  <span style="color:#8c857a;font-size:11.5px;font-weight:600">('+esc(cut)+')</span>';
+      h+="\n\u{1F4AC} 名言："+showBr(m.quote);
+      h+="\n\u{1F4D6} 解读："+showBr(m.summary);
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // 投资风格画像(从 data-mbti.js 读)
+  if(typeof MBTI!=="undefined" && MBTI.styles){
+    var sorder=["steady_rational","steady_emotional","aggressive_rational","aggressive_emotional","balanced"];
+    h+='<div class="panel"><h2>\u{1F3AD} 投资风格画像 · 称号文案 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js</span></h2>';
+    sorder.forEach(function(k){
+      var s=MBTI.styles[k]; if(!s)return;
+      var col=esc(s.color||"#5a6470");
+      h+='<div class="formula" style="border-left-color:'+col+'">';
+      h+='<b style="color:'+col+';font-size:14px">'+esc(s.emoji)+" "+esc(s.title)+'</b>';
+      h+='  <span style="color:#8c857a;font-size:11.5px;font-weight:600">('+esc(s.sub)+')</span>';
+      h+="\n\u{1F3F7}\uFE0F 标签："+esc(s.tag);
+      h+="\n\u{1F4D6} 解读："+showBr(s.desc);
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // 投资风格 · 维度释义(从 data-mbti.js 读)
+  if(typeof MBTI!=="undefined" && MBTI.dims){
+    h+='<div class="panel"><h2>\u{1F4CA} 风格维度释义 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js · dims</span></h2>';
+    MBTI.dims.forEach(function(dm){
+      h+='<div class="formula" style="border-left-color:var(--blue)">';
+      h+='<b>'+esc(dm.neg)+' \u2190 '+esc(dm.key)+' \u2192 '+esc(dm.pos)+'</b>';
+      h+="\n\u2796 "+esc(dm.neg)+"："+showBr(dm.negDesc);
+      h+="\n\u2795 "+esc(dm.pos)+"："+showBr(dm.posDesc);
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // 投资风格 · 情境测试题(从 data-mbti.js 读)
+  if(typeof MBTI!=="undefined" && MBTI.scenarios){
+    h+='<div class="panel"><h2>\u2753 风格测试 · 情境题 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js · scenarios</span></h2>';
+    Object.keys(MBTI.scenarios).forEach(function(pk){
+      var sc=MBTI.scenarios[pk];
+      h+='<div class="formula" style="border-left-color:var(--blue)">';
+      h+='<b>'+esc(pk)+'：'+esc(sc.q)+'</b>';
+      (sc.opts||[]).forEach(function(o,i){
+        var eff=Object.keys(o.e||{}).map(function(kk){return kk+(o.e[kk]>=0?"+":"")+o.e[kk];}).join(" ")||"无倾向";
+        h+="\n"+(i+1)+". "+esc(o.t)+'  <span style="color:#8c857a;font-size:11px">['+esc(eff)+']</span>';
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
   // 介绍首页卡片
   h+='<div class="panel"><h2>📖 介绍首页卡片 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.intro</span></h2>';
   (C.intro||[]).forEach(function(card,i){
@@ -215,9 +282,10 @@ function renderConfig(){
   h+='<div class="pgrp-t" style="margin-top:4px">五档揭晓点评</div>';
   h+=kvTable({SS:T.tierSS,S:T.tierS,A:T.tierA,B:T.tierB,C:T.tierC});
   h+='<div class="pgrp-t" style="margin-top:12px">流程/页面文案</div>';
-  var skip={tierSS:1,tierS:1,tierA:1,tierB:1,tierC:1,titles:1,btnAfterPeriod:1};
+  var skip={tierSS:1,tierS:1,tierA:1,tierB:1,tierC:1,titles:1,btnAfterPeriod:1,outcomeShort:1};
   var rest={};Object.keys(T).forEach(function(k){if(!skip[k])rest[k]=T[k];});
   h+=kvTable(rest);
+  if(T.outcomeShort){h+='<div class="pgrp-t" style="margin-top:12px">五档结果简称 · 轨迹表/高光框用 (outcomeShort)</div>'+kvTable(T.outcomeShort);}
   if(T.btnAfterPeriod){h+='<div class="pgrp-t" style="margin-top:12px">时代落幕按钮文案 (btnAfterPeriod)</div>'+kvTable(T.btnAfterPeriod);}
   if(T.titles){h+='<div class="pgrp-t" style="margin-top:12px">投资人头衔进阶 (titles)</div><div class="txt">'+T.titles.map(function(t,i){return (i+1)+'. '+esc(t);}).join(' → ')+'</div>';}
   h+='</div>';

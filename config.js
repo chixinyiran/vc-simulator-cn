@@ -146,7 +146,25 @@ const CONFIG = {
     btnConfirmed: '确认押注',
     btnWitness: '见证时代的答案',
     btnContinue: '继续下一站',
-    // 结局页
+    // 结局页 · 战绩卡
+    endingRankLabel: '二 十 六 年 · 终 局',
+    endingStatScore: '综合评分',
+    endingStatAum: '最终资本',
+    endingStatTrack: '业绩声望',
+    endingStatHitMiss: '命中/踩坑',
+    endingBestTitle: '🏆 封神一投',
+    endingWorstTitle: '💀 至暗一坑',
+    endingBestNone: '这一生，未曾抓住真正的大鱼',
+    endingWorstNone: '谨慎如你，未踩重大深坑',
+    endingRecordHead: '— 二十六年投资轨迹 —',
+    endingFootBrand: '中国创业投资模拟器 · <b>2000—2026</b> · 🦞 小龙虾出品',
+    endingFootQrTip: '长按扫码走一遍你的投资人生 · 仅供娱乐',
+    // 五档结果简称(轨迹表/高光框用，区别于 outcomeTiers.label 长名)
+    outcomeShort: { SS:'传奇', S:'命中', A:'保本', B:'失利', C:'惨败' },
+    // 结局页按钮/提示
+    btnCopyShare: '复制分享',
+    btnEndingRestart: '重新开始',
+    endingShareHint: '长图生成后会弹出预览，手机端长按图片即可保存到相册<br>复制链接发给朋友，挑战谁是更强的投资人',
     mbtiHead: '— 你的投资风格画像 —',
     genImage: '生成战绩长图',
     genImageWait: '正在生成长图，请稍候…',

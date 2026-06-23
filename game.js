@@ -591,35 +591,35 @@ function showEnding(healthDead){
   const wins=fullHistory.filter(h=>h.tier==='SS'||h.tier==='S').sort((a,b)=>order[b.tier]-order[a.tier]);
   const loses=fullHistory.filter(h=>h.tier==='C'||h.tier==='B').sort((a,b)=>order[a.tier]-order[b.tier]);
   const best=wins[0], worst=loses[0];
-  const ocL={SS:'传奇',S:'命中',A:'保本',B:'失利',C:'惨败'};
+  const ocL=CONFIG.text.outcomeShort;
   const recRows=fullHistory.map(h=>`<div class="rec-row"><span class="yr">${h.year}</span><span class="dl">${h.tag} · ${h.name}</span><span class="oc rtier ${GAME.outcomeTiers[h.tier].cls}">${ocL[h.tier]}</span></div>`).join('');
   const winCnt=fullHistory.filter(h=>h.tier==='SS'||h.tier==='S').length;
   const loseCnt=fullHistory.filter(h=>h.tier==='C'||h.tier==='B').length;
   el.innerHTML=`
     <div class="share-card" id="shareCard" style="--accent-c:${meta.color};--ending-bg:${meta.bg||'#f5f1e8'};--ending-glow:${meta.glow||'rgba(184,134,11,.1)'}">
-      <div class="sc-head"><div class="emoji">${meta.emoji}</div><div class="rank-label">二 十 六 年 · 终 局</div><h1>${meta.title}</h1></div>
+      <div class="sc-head"><div class="emoji">${meta.emoji}</div><div class="rank-label">${CONFIG.text.endingRankLabel}</div><h1>${meta.title}</h1></div>
       <div class="sc-quote">「${meta.quote}」</div>
       <div class="sc-summary">${meta.summary}</div>
       <div class="sc-stats">
-        <div class="fs"><div class="k">综合评分</div><div class="v">${score}</div></div>
-        <div class="fs"><div class="k">最终资本</div><div class="v">${Math.round(state.aum)}</div></div>
-        <div class="fs"><div class="k">业绩声望</div><div class="v">${Math.round(state.track)}</div></div>
-        <div class="fs"><div class="k">命中/踩坑</div><div class="v">${winCnt}/${loseCnt}</div></div>
+        <div class="fs"><div class="k">${CONFIG.text.endingStatScore}</div><div class="v">${score}</div></div>
+        <div class="fs"><div class="k">${CONFIG.text.endingStatAum}</div><div class="v">${Math.round(state.aum)}</div></div>
+        <div class="fs"><div class="k">${CONFIG.text.endingStatTrack}</div><div class="v">${Math.round(state.track)}</div></div>
+        <div class="fs"><div class="k">${CONFIG.text.endingStatHitMiss}</div><div class="v">${winCnt}/${loseCnt}</div></div>
       </div>
       <div class="sc-highlights">
-        <div class="hl-box win"><div class="t">🏆 封神一投</div>${best?`<div class="nm">${best.name}</div><div class="yr">${best.year} · ${best.tag} · ${ocL[best.tier]}</div>`:`<div class="none">这一生，未曾抓住真正的大鱼</div>`}</div>
-        <div class="hl-box lose"><div class="t">💀 至暗一坑</div>${worst?`<div class="nm">${worst.name}</div><div class="yr">${worst.year} · ${worst.tag} · ${ocL[worst.tier]}</div>`:`<div class="none">谨慎如你，未踩重大深坑</div>`}</div>
+        <div class="hl-box win"><div class="t">${CONFIG.text.endingBestTitle}</div>${best?`<div class="nm">${best.name}</div><div class="yr">${best.year} · ${best.tag} · ${ocL[best.tier]}</div>`:`<div class="none">${CONFIG.text.endingBestNone}</div>`}</div>
+        <div class="hl-box lose"><div class="t">${CONFIG.text.endingWorstTitle}</div>${worst?`<div class="nm">${worst.name}</div><div class="yr">${worst.year} · ${worst.tag} · ${ocL[worst.tier]}</div>`:`<div class="none">${CONFIG.text.endingWorstNone}</div>`}</div>
       </div>
       <div class="mbti-block" id="mbtiBlock"></div>
-      <div class="sc-record" id="scRecord"><h3>— 二十六年投资轨迹 —</h3>${recRows}</div>
-      <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">中国创业投资模拟器 · <b>2000—2026</b> · 🦞 小龙虾出品<div class="qr-tip">长按扫码走一遍你的投资人生 · 仅供娱乐</div></div></div>
+      <div class="sc-record" id="scRecord"><h3>${CONFIG.text.endingRecordHead}</h3>${recRows}</div>
+      <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">${CONFIG.text.endingFootBrand}<div class="qr-tip">${CONFIG.text.endingFootQrTip}</div></div></div>
     </div>
     <div class="share-actions">
       <button class="btn" onclick="genImage()"><span class="btn-ic">${IC_CAMERA}</span>${CONFIG.text.genImage}</button>
-      <button class="btn ghost" onclick="copyLink()"><span class="btn-ic">${IC_LINK}</span>复制分享</button>
-      <button class="btn ghost" onclick="goHome()"><span class="btn-ic">${IC_RESTART}</span>重新开始</button>
+      <button class="btn ghost" onclick="copyLink()"><span class="btn-ic">${IC_LINK}</span>${CONFIG.text.btnCopyShare}</button>
+      <button class="btn ghost" onclick="goHome()"><span class="btn-ic">${IC_RESTART}</span>${CONFIG.text.btnEndingRestart}</button>
     </div>
-    <div class="share-hint">长图生成后会弹出预览，手机端长按图片即可保存到相册<br>复制链接发给朋友，挑战谁是更强的投资人</div>`;
+    <div class="share-hint">${CONFIG.text.endingShareHint}</div>`;
   renderMBTI();
   renderShareQR();   // 生成分享二维码(指向当前游戏链接,html2canvas会一起截进长图)
   // 保存本局结果(供回看) + 清掉中途进度
