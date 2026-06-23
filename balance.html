@@ -62,6 +62,7 @@
   <div class="tabs">
     <div class="tab on" data-p="doc">📐 数值手册</div>
     <div class="tab" data-p="tune">🎛 调参分布</div>
+    <div class="tab" data-p="cfg">📝 文案与配置</div>
   </div>
 
   <!-- 数值手册页 -->
@@ -81,6 +82,9 @@
     <div class="live" id="live">⏳ 模拟中…</div>
     <div id="dist"></div>
   </div>
+
+  <!-- 文案与配置页 -->
+  <div class="page" id="page-cfg"></div>
 
   <div class="footer">🦞 小龙虾出品 · 数值手册+调参器 · 数据=游戏真实配置（config.js / data-periods.js / data-endings.js）</div>
 </div>
@@ -102,6 +106,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(tab){
     tab.classList.add('on');
     document.getElementById('page-'+tab.dataset.p).classList.add('on');
     if(tab.dataset.p==='tune' && !window.__simDone){ runSim(); }
+    if(tab.dataset.p==='cfg' && !window.__cfgDone){ renderConfig(); window.__cfgDone=true; }
   });
 });
 
@@ -152,6 +157,63 @@ function renderDoc(){
   defs.forEach(function(d){h+='<tr><td>'+d[0]+'</td><td>'+d[1]+'</td></tr>';});
   h+='</table></div>';
   document.getElementById('page-doc').innerHTML=h;
+}
+
+
+// ============ 文案与配置页(从真实 CONFIG 动态读) ============
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showBr(s){return esc(s).replace(/&lt;br\s*\/?&gt;/gi,' ⏎ ').replace(/&lt;b&gt;/gi,'').replace(/&lt;\/b&gt;/gi,'');}
+function kvTable(obj,keys){
+  var h='<table class="deftbl">';
+  (keys||Object.keys(obj)).forEach(function(k){
+    h+='<tr><td>'+esc(k)+'</td><td>'+showBr(obj[k])+'</td></tr>';
+  });
+  return h+'</table>';
+}
+function renderConfig(){
+  var C=CONFIG, h='';
+  h+='<div class="note" style="margin-bottom:14px;">以下全部从游戏真实配置 <b>config.js</b> 实时读取（CONFIG.ui / text / intro / music / storage 等）。改 config.js 后本页自动反映。文案里的 <code>⏎</code> 表示换行符 &lt;br&gt;，<code>${name}</code> 等是运行时变量占位。</div>';
+
+  // 封面/通用 UI 文案
+  h+='<div class="panel"><h2>🖼 封面与通用 UI 文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.ui</span></h2>';
+  h+=kvTable(C.ui)+'</div>';
+
+  // 介绍首页卡片
+  h+='<div class="panel"><h2>📖 介绍首页卡片 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.intro</span></h2>';
+  (C.intro||[]).forEach(function(card,i){
+    h+='<div class="formula" style="border-left-color:var(--blue)"><b>'+esc(card.icon)+' '+esc(card.title)+'</b>\n'+showBr(card.body)+'</div>';
+  });
+  h+='</div>';
+
+  // 游戏内文案
+  h+='<div class="panel"><h2>💬 游戏内文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.text</span></h2>';
+  var T=C.text;
+  h+='<div class="pgrp-t" style="margin-top:4px">五档揭晓点评</div>';
+  h+=kvTable({SS:T.tierSS,S:T.tierS,A:T.tierA,B:T.tierB,C:T.tierC});
+  h+='<div class="pgrp-t" style="margin-top:12px">流程/页面文案</div>';
+  var skip={tierSS:1,tierS:1,tierA:1,tierB:1,tierC:1,titles:1,btnAfterPeriod:1};
+  var rest={};Object.keys(T).forEach(function(k){if(!skip[k])rest[k]=T[k];});
+  h+=kvTable(rest);
+  if(T.btnAfterPeriod){h+='<div class="pgrp-t" style="margin-top:12px">时代落幕按钮文案 (btnAfterPeriod)</div>'+kvTable(T.btnAfterPeriod);}
+  if(T.titles){h+='<div class="pgrp-t" style="margin-top:12px">投资人头衔进阶 (titles)</div><div class="txt">'+T.titles.map(function(t,i){return (i+1)+'. '+esc(t);}).join(' → ')+'</div>';}
+  h+='</div>';
+
+  // 音乐参数
+  h+='<div class="panel"><h2>🎵 音乐参数 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.music</span></h2>';
+  h+=kvTable(C.music)+'</div>';
+
+  // 存档键名
+  h+='<div class="panel"><h2>💾 本地存档键名 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.storage</span></h2>';
+  h+=kvTable(C.storage)+'</div>';
+
+  // 其他零散配置
+  h+='<div class="panel"><h2>⚙️ 其他配置</h2><table class="deftbl">';
+  h+='<tr><td>mbtiMidThreshold</td><td>'+esc(C.mbtiMidThreshold)+'（MBTI 某维度 |分|≤此值视为接近中点/均衡倾向）</td></tr>';
+  h+='<tr><td>scoreClampMax</td><td>'+esc(C.scoreClampMax)+'（综合评分上限）</td></tr>';
+  h+='<tr><td>scoreTiersForSfx</td><td>结局音效门槛 big≥'+esc(C.scoreTiersForSfx.big)+' / mid≥'+esc(C.scoreTiersForSfx.mid)+' / neutral≥'+esc(C.scoreTiersForSfx.neutral)+'</td></tr>';
+  h+='</table></div>';
+
+  document.getElementById('page-cfg').innerHTML=h;
 }
 
 // ============ 调参器 ============
