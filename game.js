@@ -592,6 +592,7 @@ function showEnding(healthDead){
   const loses=fullHistory.filter(h=>h.tier==='C'||h.tier==='B').sort((a,b)=>order[a.tier]-order[b.tier]);
   const best=wins[0], worst=loses[0];
   const ocL={SS:'传奇',S:'命中',A:'保本',B:'失利',C:'惨败'};
+  const recRows=fullHistory.map(h=>`<div class="rec-row"><span class="yr">${h.year}</span><span class="dl">${h.tag} · ${h.name}</span><span class="oc rtier ${GAME.outcomeTiers[h.tier].cls}">${ocL[h.tier]}</span></div>`).join('');
   const winCnt=fullHistory.filter(h=>h.tier==='SS'||h.tier==='S').length;
   const loseCnt=fullHistory.filter(h=>h.tier==='C'||h.tier==='B').length;
   el.innerHTML=`
@@ -610,6 +611,7 @@ function showEnding(healthDead){
         <div class="hl-box lose"><div class="t">💀 至暗一坑</div>${worst?`<div class="nm">${worst.name}</div><div class="yr">${worst.year} · ${worst.tag} · ${ocL[worst.tier]}</div>`:`<div class="none">谨慎如你，未踩重大深坑</div>`}</div>
       </div>
       <div class="mbti-block" id="mbtiBlock"></div>
+      <div class="sc-record" id="scRecord"><h3>— 二十六年投资轨迹 —</h3>${recRows}</div>
       <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">中国创业投资模拟器 · <b>2000—2026</b> · 🦞 小龙虾出品<div class="qr-tip">长按扫码走一遍你的投资人生 · 仅供娱乐</div></div></div>
     </div>
     <div class="share-actions">
@@ -659,16 +661,21 @@ function toast(msg,ms){const t=document.getElementById('toast');t.textContent=ms
 function genImage(){
   if(window.Sfx)Sfx.play('click');
   const card=document.getElementById('shareCard');
+  // 截图前临时隐藏「二十六年投资轨迹」明细块(页面仍显示,只是不进长图,避免截图过长)
+  const rec=document.getElementById('scRecord');
+  const recPrevDisplay = rec ? rec.style.display : null;
+  if(rec) rec.style.display='none';
   toast(CONFIG.text.genImageWait,4000);
   setTimeout(()=>{
     html2canvas(card,{scale:2,backgroundColor:'#f5f1e8',useCORS:true,logging:false,windowWidth:card.scrollWidth}).then(canvas=>{
+      if(rec) rec.style.display = recPrevDisplay || '';  // 截完立即恢复显示
       const dataUrl=canvas.toDataURL('image/png');
       const modal=document.getElementById('imgModal');
       document.getElementById('imgOut').src=dataUrl;
       document.getElementById('imgTip').innerHTML=CONFIG.text.genImageTip;
       modal.classList.add('show');
       toast(CONFIG.text.genImageOk,1500);
-    }).catch(e=>{console.error(e);toast(CONFIG.text.genImageFail,3000);});
+    }).catch(e=>{if(rec) rec.style.display = recPrevDisplay || '';console.error(e);toast(CONFIG.text.genImageFail,3000);});
   },80);
 }
 
