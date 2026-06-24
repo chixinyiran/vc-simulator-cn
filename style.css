@@ -3,6 +3,8 @@
     --bg:#f0ece2; --paper:#f5f1e8; --ink:#1a1714; --ink-soft:#4a443c;
     --ink-faint:#8c857a; --line:#d6cfc0; --good:#3c6b4f; --bad:#a8453a;
     --warn:#9a7b3a; --card:#faf7ef; --gold:#b8860b; --accent:#b8860b;
+    /* 首页(封面)专属中枢色:宣纸墨褐,独立于各时代主题,不借用首个时代的金色 */
+    --home-accent:#6b5d4a; --home-accent-bright:#3a2f24;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{background:var(--paper);color:var(--ink);
@@ -38,9 +40,13 @@
     .btn:hover{background:var(--accent,#b8860b);color:var(--paper);border-color:var(--accent,#b8860b);transform:translateY(-2px);box-shadow:0 6px 18px rgba(26,23,20,.18);box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent);}
     /* ghost 轻量钮(返回/复制/查看):描边提亮,不填充(更像链接) */
     .btn.ghost:hover{background:transparent;color:var(--accent);border-color:var(--accent);transform:translateY(-1px);box-shadow:none;}
+    /* 首页按钮专属:用墨褐中枢色,不借用时代金色 */
+    #cover .btn:hover{background:var(--home-accent);color:var(--paper);border-color:var(--home-accent);box-shadow:0 6px 20px color-mix(in srgb,var(--home-accent) 26%,transparent);}
+    #cover .btn.ghost:hover{background:transparent;color:var(--home-accent-bright);border-color:var(--home-accent-bright);transform:translateY(-1px);box-shadow:0 4px 14px color-mix(in srgb,var(--home-accent) 16%,transparent);}
   }
   .btn:active{transform:scale(.97);background:var(--accent,#b8860b);color:var(--paper);border-color:var(--accent,#b8860b);}
   .btn.ghost{padding:12px 28px;font-size:14px;}
+  #cover .btn.ghost{color:var(--ink-soft);border-color:var(--line);}
   /* ===== 点击灵动效果 ===== */
   .btn,.scenario .sc-opt,.deal,.undo-icon,.music-btn,.info-btn,.tip-close{position:relative;overflow:hidden;}
   .ripple{position:absolute;border-radius:50%;transform:scale(0);pointer-events:none;background:rgba(138,90,58,.35);animation:rippleExpand .6s ease-out forwards;z-index:0;}
@@ -316,7 +322,7 @@
 
 /* ===== 下滑提示 + 介绍首页 ===== */
 /* 首页右上角 i 信息图标 + tip 弹层 */
-.info-btn{position:fixed;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));z-index:150;width:34px;height:34px;color:var(--accent,#b8860b);
+.info-btn{position:fixed;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));z-index:150;width:34px;height:34px;color:var(--home-accent);
   background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:50%;
   display:flex;align-items:center;justify-content:center;padding:0;
   cursor:pointer;opacity:.6;
@@ -325,7 +331,7 @@
   user-select:none;-webkit-tap-highlight-color:transparent;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
 .info-btn svg{width:18px;height:18px;display:block;pointer-events:none;}
 @media (hover: hover) {
-.info-btn:hover{opacity:1;transform:scale(1.06) rotate(4deg);background:rgba(255,255,255,.9);border-color:var(--accent);color:var(--accent);box-shadow:0 3px 10px rgba(26,23,20,.12);box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 22%,transparent);}
+.info-btn:hover{opacity:1;transform:scale(1.06) rotate(4deg);background:rgba(255,255,255,.9);border-color:var(--home-accent-bright);color:var(--home-accent-bright);box-shadow:0 3px 10px rgba(26,23,20,.12);box-shadow:0 3px 10px color-mix(in srgb,var(--home-accent) 26%,transparent);}
 }
 .info-btn:active{transform:scale(.92);}
 /* i图标只在首页(cover可见)显示,其他页面隐藏 */
