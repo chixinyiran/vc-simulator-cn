@@ -1,26 +1,4 @@
 const DATA_PERIODS = {
-  "titles": [
-    {
-      "min": 0,
-      "name": "投资分析师"
-    },
-    {
-      "min": 1,
-      "name": "投资经理"
-    },
-    {
-      "min": 2,
-      "name": "投资总监"
-    },
-    {
-      "min": 3,
-      "name": "副总裁"
-    },
-    {
-      "min": 4,
-      "name": "合伙人"
-    }
-  ],
   "periods": [
     {
       "id": "P1",

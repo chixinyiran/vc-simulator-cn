@@ -82,12 +82,8 @@ const CONFIG = {
   },
 
   // === 音乐参数 ===
+  // 注:音量/淡入淡出在 engine-music.js 内写死(WebAudio调度参数已随换mp3废弃),此处只留引擎实际读取的两个开关
   music: {
-    masterVolume: 0.9,
-    fadeInMs: 300,
-    fadeOutMs: 250,
-    schedAheadSec: 0.2,
-    lookaheadMs: 80,
     defaultOn: true,   // 默认开(首次交互时响起)
     enabled: true,     // 音乐总开关(已换真实mp3年代金曲风)
   },
