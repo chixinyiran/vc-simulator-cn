@@ -475,7 +475,7 @@ function rollOutcome(d){
   // 运气影响胜率: 实际胜率 = clamp(base + (运气-50)/50 * luckEffect, 0, 1)
   const luckAdj=((state.luck-50)/50)*(CONFIG.luckEffect||0.3);
   const tb=(P.trendBoost&&P.trendBoost[d.trend])||0;
-  let p=clamp(d.base+luckAdj+tb, 0, 1);
+  let p=clamp(d.base+(P.baseAdjust||0)+luckAdj+tb, 0, 1);  // 2026-06-24:补回baseAdjust(此前真实引擎漏读),vc当前baseAdjust=0无变化,保证两引擎一致
   const dice=Math.random();
   const perf=p*P.perfWeight.base+(1-dice)*P.perfWeight.dice;
   if(perf>=P.tierCuts.SS) return 'SS';
