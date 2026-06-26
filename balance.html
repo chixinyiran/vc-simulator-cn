@@ -83,17 +83,7 @@
 </style>
 </head>
 <body>
-<!-- 口令登录门(与stats.html共享同项目登录态:同一localStorage key,2小时免验证) -->
-<div id="authGate" style="position:fixed;inset:0;z-index:9999;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
-  <div style="font-size:18px;font-weight:800;margin-bottom:6px;">📊 数据手册 · 调参器</div>
-  <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:16px;">需口令访问</div>
-  <input id="authPin" type="password" inputmode="numeric" placeholder="请输入口令" autocomplete="off"
-    style="width:240px;max-width:80vw;font-size:18px;text-align:center;letter-spacing:.3em;padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);">
-  <button id="authBtn" style="width:240px;max-width:80vw;margin-top:14px;border:1.5px solid var(--accent);background:var(--accent);color:var(--paper);font-family:inherit;font-size:15px;font-weight:700;padding:12px;border-radius:8px;cursor:pointer;letter-spacing:.05em;">进入</button>
-  <div id="authErr" style="color:var(--bad);font-size:13px;min-height:18px;margin-top:8px;"></div>
-  <div style="color:var(--ink-faint);font-size:11.5px;margin-top:16px;">登录后 2 小时内免再次验证</div>
-</div>
-<div class="wrap" style="display:none">
+<div class="wrap">
   <div class="game-name">中国创业投资模拟器</div>
   <h1>📖 数据手册 · 调参器 · 配置</h1>
   <div class="sub">游戏公式/参数说明 · 实时调参看分布 · 读取真实配置</div>
@@ -127,10 +117,12 @@
   <div class="footer">🦞 小龙虾出品 · 数值手册+调参器 · 数据=游戏真实配置（config.js / data-periods.js / data-endings.js）</div>
 </div>
 
-<script src="config.js?v=20260625xg"></script>
-<script src="data-periods.js?v=20260625xg"></script>
-<script src="data-endings.js?v=20260625xg"></script>
-<script src="data-mbti.js?v=20260625xg"></script>
+<script src="config.js?v=20260627persona6c"></script>
+<script src="data-periods.js?v=20260627persona6c"></script>
+<script src="data-endings.js?v=20260627persona6c"></script>
+<script src="data-mbti.js?v=20260627persona6c"></script>
+<script src="data-persona5.js?v=20260627persona6c"></script>
+<script src="data-profile6.js?v=20260627persona6c"></script>
 <script>
 "use strict";
 var RUNS=10000;
@@ -250,41 +242,43 @@ function renderConfig(){
     h+='</div>';
   }
 
-  // 投资风格画像(从 data-mbti.js 读)
-  if(typeof MBTI!=="undefined" && MBTI.styles){
-    var sorder=["steady_rational","steady_emotional","aggressive_rational","aggressive_emotional","balanced"];
-    h+='<div class="panel"><h2>\u{1F3AD} 投资风格画像 · 称号文案 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js</span></h2>';
-    sorder.forEach(function(k){
-      var s=MBTI.styles[k]; if(!s)return;
+  // 五维投资人格(从 data-persona5.js 读, 6人格←→6大师)
+  if(typeof PERSONA5!=="undefined" && PERSONA5.archetypes){
+    var MNAME={buffett:'巴菲特',simons:'西蒙斯',soros:'索罗斯',wood:'木头姐',trumpish:'豪赌狂人',muskish:'钢铁狂想家'};
+    h+='<div class="panel"><h2>\u{1F3AD} 五维投资人格 · 6型称号 <span style="font-size:11px;color:#8c857a;font-weight:600">data-persona5.js · 对应6大师</span></h2>';
+    PERSONA5.archetypes.forEach(function(s){
       var col=esc(s.color||"#5a6470");
+      var ac=s.anchor||{};
+      var anchorTxt=['risk','data','horizon','focus','decisive'].map(function(k){return k+':'+(ac[k]!=null?ac[k]:'-');}).join(' ');
       h+='<div class="formula" style="border-left-color:'+col+'">';
       h+='<b style="color:'+col+';font-size:14px">'+esc(s.emoji)+" "+esc(s.title)+'</b>';
-      h+='  <span style="color:#8c857a;font-size:11.5px;font-weight:600">('+esc(s.sub)+')</span>';
+      h+='  <span style="color:#8c857a;font-size:11.5px;font-weight:600">(\u2248 '+esc(MNAME[s.master]||s.master)+')</span>';
       h+="\n\u{1F3F7}\uFE0F 标签："+esc(s.tag);
+      h+="\n\u{1F4CD} 五维锚点："+esc(anchorTxt);
       h+="\n\u{1F4D6} 解读："+showBr(s.desc);
       h+='</div>';
     });
     h+='</div>';
   }
 
-  // 投资风格 · 维度释义(从 data-mbti.js 读)
-  if(typeof MBTI!=="undefined" && MBTI.dims){
-    h+='<div class="panel"><h2>\u{1F4CA} 风格维度释义 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js · dims</span></h2>';
-    MBTI.dims.forEach(function(dm){
+  // 五维释义(从 data-profile6.js 读)
+  if(typeof PROFILE!=="undefined" && PROFILE.dims){
+    h+='<div class="panel"><h2>\u{1F4CA} 五维释义 <span style="font-size:11px;color:#8c857a;font-weight:600">data-profile6.js · dims</span></h2>';
+    PROFILE.dims.forEach(function(dm){
       h+='<div class="formula" style="border-left-color:var(--blue)">';
-      h+='<b>'+esc(dm.neg)+' \u2190 '+esc(dm.key)+' \u2192 '+esc(dm.pos)+'</b>';
-      h+="\n\u2796 "+esc(dm.neg)+"："+showBr(dm.negDesc);
-      h+="\n\u2795 "+esc(dm.pos)+"："+showBr(dm.posDesc);
+      h+='<b>'+esc(dm.axis)+'：'+esc(dm.low)+' \u2190 '+esc(dm.key)+' \u2192 '+esc(dm.high)+'</b>';
+      h+="\n\u2796 "+esc(dm.low)+"："+showBr(dm.lowDesc);
+      h+="\n\u2795 "+esc(dm.high)+"："+showBr(dm.highDesc);
       h+='</div>';
     });
     h+='</div>';
   }
 
-  // 投资风格 · 情境测试题(从 data-mbti.js 读)
-  if(typeof MBTI!=="undefined" && MBTI.scenarios){
-    h+='<div class="panel"><h2>\u2753 风格测试 · 情境题 <span style="font-size:11px;color:#8c857a;font-weight:600">data-mbti.js · scenarios</span></h2>';
-    Object.keys(MBTI.scenarios).forEach(function(pk){
-      var sc=MBTI.scenarios[pk];
+  // 五维测试 · 情境题(从 data-profile6.js 读, P1-P5 单维)
+  if(typeof PROFILE!=="undefined" && PROFILE.scenarios){
+    h+='<div class="panel"><h2>\u2753 五维测试 · 情境题 <span style="font-size:11px;color:#8c857a;font-weight:600">data-profile6.js · scenarios</span></h2>';
+    Object.keys(PROFILE.scenarios).forEach(function(pk){
+      var sc=PROFILE.scenarios[pk];
       h+='<div class="formula" style="border-left-color:var(--blue)">';
       h+='<b>'+esc(pk)+'：'+esc(sc.q)+'</b>';
       (sc.opts||[]).forEach(function(o,i){
@@ -440,7 +434,6 @@ function play(strat){
   return{score:score,ending:pickEnding(score,state),dead:state.health<=0,state:state,lock:lock};
 }
 function runSim(){
-  if(!P){return;}  // P(参数快照)未就绪时不跑,避免提前触发(恢复tune tab早于snapshot)崩在"模拟中"
   var strats=['greedy','safe','trend','random'];
   var order=['legend','master','veteran','steady','rollercoaster','exit','earlyout'];
   var nm={legend:'👑 封神级',master:'🌟 一线传奇',veteran:'💼 资深合伙人',steady:'⚖️ 稳进玩家',rollercoaster:'🎢 过山车',exit:'📉 离场',earlyout:'🏥 健康透支'};
@@ -493,20 +486,28 @@ function runSim(){
     h+='<div class="txt" style="font-size:11px;color:#8c857a;margin-top:8px;border-top:1px solid var(--line);padding-top:8px;">分时代: '+eh+'</div>';
     h+='</div>';
   })();
-  // ===== 风格画像分布(完整调参) =====
-  (function(){
-    var sc=MBTI.scenarios, keys=Object.keys(sc), TH=P.mbtiMid;
-    function calc(r,m){var rMid=Math.abs(r)<=TH,mMid=Math.abs(m)<=TH;if(rMid&&mMid)return'balanced';return (r>=0?'aggressive':'steady')+'_'+(m>=0?'emotional':'rational');}
-    var SN=30000, cnt={steady_rational:0,steady_emotional:0,aggressive_rational:0,aggressive_emotional:0,balanced:0};
-    for(var i=0;i<SN;i++){var r=0,m=0;keys.forEach(function(k){var o=sc[k].opts[Math.floor(Math.random()*sc[k].opts.length)];if(o.e){r+=o.e.risk||0;m+=o.e.mind||0;}});cnt[calc(r,m)]++;}
-    var sorder=['steady_rational','steady_emotional','aggressive_rational','aggressive_emotional','balanced'];
-    var TS={steady_rational:20,steady_emotional:20,aggressive_rational:20,aggressive_emotional:20,balanced:20};
-    h+='<div class="panel"><h2>🎭 风格画像分布 <span style="font-size:11px;font-weight:600;color:#8c857a">随机答5题×'+(SN/1000)+'k局</span></h2>';
-    h+='<div class="txt" style="font-size:11px;color:#8c857a;margin-bottom:10px;">目标比例: 5型各约20% · 调下方「均衡型阈值」滑块看实时变化(阈值越大·平衡型越多)</div>';
-    sorder.forEach(function(k){var pct=cnt[k]/SN*100;
-      h+='<div class="row"><div class="nm">'+MBTI.styles[k].emoji+MBTI.styles[k].title+'</div><div class="barwrap"><div class="bar" style="width:'+Math.min(100,pct*2.5)+'%;background:'+MBTI.styles[k].color+'"></div></div><div class="pct">'+pct.toFixed(1)+'%</div></div>';});
-    h+='</div>';
-  })();
+  // ===== 五维人格分布(随机答5题→最近人格原型) =====
+  if(typeof PERSONA5!=="undefined" && typeof PROFILE!=="undefined"){
+    (function(){
+      var sc=PROFILE.scenarios, keys=Object.keys(sc), norm=PROFILE.norm||4;
+      var SN=30000, cnt={};
+      PERSONA5.archetypes.forEach(function(a){cnt[a.key]=0;});
+      var DIM=PERSONA5.DIM;
+      for(var i=0;i<SN;i++){
+        var raw={risk:0,data:0,horizon:0,focus:0,decisive:0};
+        keys.forEach(function(k){var o=sc[k].opts[Math.floor(Math.random()*sc[k].opts.length)];if(o.e){for(var dk in o.e){raw[dk]=(raw[dk]||0)+o.e[dk];}}});
+        // 归一化到 0-100 (单题单维±norm, 5题但每维只1题主导→用 ±norm 映射)
+        var ps={};DIM.forEach(function(dk){var v=raw[dk]||0; ps[dk]=Math.max(0,Math.min(100, 50 + v/norm*50));});
+        var best=PERSONA5.match(ps);
+        cnt[best.key]++;
+      }
+      h+='<div class="panel"><h2>🎭 五维人格分布 <span style="font-size:11px;font-weight:600;color:#8c857a">随机答5题×'+(SN/1000)+'k局 → 最近人格</span></h2>';
+      h+='<div class="txt" style="font-size:11px;color:#8c857a;margin-bottom:10px;">6人格←→6大师 · 玩家五维到最近原型(与大师匹配同源)</div>';
+      PERSONA5.archetypes.forEach(function(a){var pct=cnt[a.key]/SN*100;
+        h+='<div class="row"><div class="nm">'+a.emoji+a.title+'</div><div class="barwrap"><div class="bar" style="width:'+Math.min(100,pct*2.5)+'%;background:'+a.color+'"></div></div><div class="pct">'+pct.toFixed(1)+'%</div></div>';});
+      h+='</div>';
+    })();
+  }
   document.getElementById('dist').innerHTML=h;
   document.getElementById('live').textContent='✅ 模拟 '+RUNS+' 局（4策略混合）';
   window.__simDone=true;
@@ -544,34 +545,8 @@ setTimeout(function(){
     renderDoc();
     BASE=snapshot();P=JSON.parse(JSON.stringify(BASE));
     renderParams();markDirty();
-    // P就绪后,若当前停在调参分布tab却还没模拟过(此前因P未就绪被守卫拦下),现在补跑一次
-    if(!window.__simDone && document.querySelector('#page-tune.on')){ runSim(); }
   }catch(e){document.getElementById('live').textContent='❌ 出错:'+e.message;console.error(e);}
 },120);
-
-// ===== 口令登录门(与本项目stats.html共享登录态) =====
-(function(){
-  var AUTH_KEY='dash_auth_ts_vc', AUTH_TTL=2*3600*1000;  // 同stats.html同项目同key→共享2小时免验证
-  var SB=(typeof CONFIG!=='undefined'&&CONFIG.supabase)||{};
-  var gate=document.getElementById('authGate');
-  var wrap=document.querySelector('.wrap');
-  function pass(){ gate.style.display='none'; if(wrap)wrap.style.display=''; }
-  function loggedIn(){ try{var t=+localStorage.getItem(AUTH_KEY);return t&&(Date.now()-t)<AUTH_TTL;}catch(e){return false;} }
-  if(loggedIn()){ pass(); return; }
-  var pin=document.getElementById('authPin'), btn=document.getElementById('authBtn'), err=document.getElementById('authErr');
-  function tryLogin(){
-    var v=(pin.value||'').trim(); err.textContent='校验中…';
-    if(!SB.url||!SB.key){ err.textContent='未配置Supabase'; return; }
-    fetch(SB.url.replace(/\/$/,'')+'/rest/v1/dashboard_auth?select=pin&limit=1',{headers:{'apikey':SB.key,'Authorization':'Bearer '+SB.key}})
-      .then(function(r){return r.json();}).then(function(rows){
-        var real=(rows&&rows[0]&&rows[0].pin)||'';
-        if(v&&v===real){ try{localStorage.setItem(AUTH_KEY,String(Date.now()));}catch(e){} pass(); }
-        else err.textContent='口令错误';
-      }).catch(function(){ err.textContent='网络错误,稍后重试'; });
-  }
-  btn.addEventListener('click',tryLogin);
-  pin.addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
-})();
 </script>
 </body>
 </html>
