@@ -107,8 +107,6 @@
   .sc-chapter{display:flex;align-items:center;justify-content:center;gap:10px;margin:52px 0 26px;}
   .sc-chapter::before,.sc-chapter::after{content:"";flex:1;max-width:72px;height:1px;background:linear-gradient(90deg,transparent,var(--accent-c,#b8860b));opacity:.4;}
   .sc-chapter::after{background:linear-gradient(90deg,var(--accent-c,#b8860b),transparent);}
-  .sc-chapter .ch-num{font-family:"Kaiti SC","STKaiti","Songti SC",serif;font-size:24px;font-weight:900;color:var(--accent-c,#b8860b);letter-spacing:.02em;flex:0 0 auto;}
-  .sc-chapter .ch-dot{font-size:18px;color:var(--accent-c,#b8860b);opacity:.6;flex:0 0 auto;margin:0 -2px;}
   .sc-chapter .ch-name{font-family:"Kaiti SC","STKaiti","Songti SC",serif;font-size:21px;letter-spacing:.08em;color:var(--accent-c,#b8860b);font-weight:900;flex:0 0 auto;}
   .sc-quote + .sc-chapter{margin-top:36px;}
   /* 子模块标题(去序号,用 emoji 装饰+左侧竖线强调) */
