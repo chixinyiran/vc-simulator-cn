@@ -912,7 +912,10 @@ const DATA_PERIODS = {
                 "net": 66
               },
               "why": "热潮来得快去得也快",
-              "gate": null
+              "gate": {
+                "type": "net",
+                "min": 350
+              }
             },
             {
               "tag": "共享经济",

@@ -129,6 +129,7 @@ const CONFIG = {
     lockNoAum: '资本不足',
     lockNoTrack: '声望不足',
     lockNoHealth: '精力不足',
+    lockNoNet: '人脉不足',
     lockSmall: '资本不足·小额参投（回报减半）',
     // 封存页
     stagedTitle: '已下注 · 封存待揭晓',

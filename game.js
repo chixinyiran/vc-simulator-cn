@@ -413,6 +413,7 @@ function showChoices(preselectIdx){
     if(g.type==='aum')   return state.aum   < g.min ? 'aum'   : 0;
     if(g.type==='track') return state.track < g.min ? 'track' : 0;
     if(g.type==='health') return state.health < g.min ? 'health' : 0;  // 硬门槛:所见即所得(健康<显示门槛就锁)
+    if(g.type==='net')   return state.network < g.min ? 'net'  : 0;  // 人脉门槛:资源/关系不够,挤不进这类局
     return 0;
   });
   // 防死局铁律1：全锁 → 强制解锁"门槛最低"的1个(总能投点什么)
@@ -434,7 +435,7 @@ function showChoices(preselectIdx){
     const lk = gateLock[i];
     const small = smallSet[i];
     const afford = !lk;
-    const lockTxt = lk==='aum'?(CONFIG.text.lockNoAum||'资本不足') : lk==='track'?(CONFIG.text.lockNoTrack||'声望不足') : lk==='health'?(CONFIG.text.lockNoHealth||'精力不足') : '';
+    const lockTxt = lk==='aum'?(CONFIG.text.lockNoAum||'资本不足') : lk==='track'?(CONFIG.text.lockNoTrack||'声望不足') : lk==='health'?(CONFIG.text.lockNoHealth||'精力不足') : lk==='net'?(CONFIG.text.lockNoNet||'人脉不足') : '';
     const lockNote = lk ? `<div class="lock-note" style="color:var(--bad)">${lockTxt}</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:'');
     return `
     <div class="deal ${afford?'':'locked'}" data-i="${i}" ${afford?`onclick="pickDeal(${i})"`:''}>
@@ -446,7 +447,7 @@ function showChoices(preselectIdx){
         <div class="mi"><div class="k">轮次</div><div class="v">${d.round}</div></div>
         <div class="mi"><div class="k">估值</div><div class="v">${d.val}</div></div>
         <div class="mi"><div class="k">需投入</div><div class="v">${d.amt?d.amt+'M':'——'}</div></div>
-        <div class="mi"><div class="k">门槛</div><div class="v">${d.gate?(d.gate.type==='aum'?'资本≥'+d.gate.min:d.gate.type==='track'?'业绩≥'+d.gate.min:'健康≥'+d.gate.min):'无'}</div></div>
+        <div class="mi"><div class="k">门槛</div><div class="v">${d.gate?(d.gate.type==='aum'?'资本≥'+d.gate.min:d.gate.type==='track'?'业绩≥'+d.gate.min:d.gate.type==='net'?'人脉≥'+d.gate.min:'健康≥'+d.gate.min):'无'}</div></div>
       </div>
       <div class="trend ${d.trend}">${ti} ${tl}</div>
     </div>`;}).join('');
