@@ -19,6 +19,8 @@ const GAME = {
 };
 
 let state, pIdx, rIdx, selDeal, stagedThisPeriod, fullHistory, gameOver, upPicks=0;
+// 投资选择不主导风格(会被「想赢选顺势」带偏),风格纯由情境题决定
+const TREND_MBTI = { up:{}, hot:{}, down:{}, safe:{} };
 window.mbti={risk:0,data:0,horizon:0,focus:0,decisive:0};
 
 // ===== 选项随机展示(Fisher-Yates原地洗牌) =====
@@ -127,7 +129,6 @@ function reportResult(payload){
     player_id:getPlayerId(), player_name:getPlayerName()||null,
     score:payload.score, title:payload.title, style:payload.styleTitle,
     mbti_risk:(typeof mbti==='object'&&mbti)?mbti.risk:null,
-    mbti_mind:(typeof mbti==='object'&&mbti)?mbti.mind:null,
     win_count:winList.length, lose_count:loseList.length,
     final_aum:s.aum!=null?Math.round(s.aum):null,
     final_track:s.track!=null?Math.round(s.track):null,
@@ -637,16 +638,7 @@ function calcStyle(){
   // 兜底(PERSONA5/PROFILE 未加载)：返回均衡型
   return { key:'balanced', emoji:'⚖️', title:'均衡掌舵者', sub:'攻守兼备 · 不走极端', color:'#5a6470',
     tag:'灵活 · 不走极端', desc:'你没有明显的偏科，能稳能进、能算账也懂得为愿景留温度，像老练的舵手随风浪调整航向。' };
-}
-function mbtiDimBars(){
-  // 返回两维度偏向百分比(50中点)。单维度极端累计≈5题×3=15，取 14 为归一化分母
-  const norm=(v,max)=>clamp(50+v/max*50,6,94);
-  return {
-    risk:{val:mbti.risk, pct:norm(mbti.risk,14)},
-    mind:{val:mbti.mind, pct:norm(mbti.mind,14)},
-  };
-}
-function calcScore(){
+}function calcScore(){
   // 净值线性评分(2026-06-22重构): 总分 = (资本-100-累计投入)*a + (业绩-100)*b + (人脉-100)*c
   const C=CONFIG.scoreCoef;
   const spent=state.spent||0;

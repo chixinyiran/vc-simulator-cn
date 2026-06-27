@@ -18,7 +18,8 @@ const GAME = {
   endingMeta: DATA_ENDINGS.endingMeta,
 };
 
-let state, pIdx, rIdx, selDeal, stagedThisPeriod, fullHistory, gameOver, mbti, upPicks=0;
+let state, pIdx, rIdx, selDeal, stagedThisPeriod, fullHistory, gameOver, upPicks=0;
+window.mbti={risk:0,data:0,horizon:0,focus:0,decisive:0};
 
 // ===== 选项随机展示(Fisher-Yates原地洗牌) =====
 // 洗的是数组本身 → index→数据映射、评分、门槛、undo(按name匹配)全部自动正确。
@@ -32,7 +33,7 @@ function shuffleOnce(arr){
 // 开新一局时清掉所有 _sh 标记,让新局重新随机(否则同一浏览器会话内多局顺序会一样)
 function resetShuffle(){
   try{
-    Object.keys(MBTI.scenarios||{}).forEach(k=>{const a=MBTI.scenarios[k].opts;if(a)delete a._sh;});
+    Object.keys(PROFILE.scenarios||{}).forEach(k=>{const a=PROFILE.scenarios[k].opts;if(a)delete a._sh;});
     (GAME.periods||[]).forEach(p=>(p.rounds||[]).forEach(r=>{if(r.deals)delete r.deals._sh;}));
   }catch(e){}
 }
@@ -87,21 +88,65 @@ function clearProgress(){ lsDel(SAVE_KEY); }
 // 保存完成的结果
 // ===== 上报到后端(全栈版数据收集,同源fetch,静默失败不影响游戏) =====
 // 上报:postMessage 给父页(全栈版iframe嵌入时父页收集);纯静态独立打开时无后端,静默
-function reportApi(kind, body){
-  // 纯静态托管(妙搭/GitHub Pages)无后端,仅 postMessage 给父页(全栈版iframe嵌入时收集);独立打开则静默无操作
-  try{ if(window.parent && window.parent!==window){ window.parent.postMessage(Object.assign({__vcsim__:kind}, body), '*'); } }catch(e){}
+// 上报:两条路并行,各部署各取所需,静默失败不影响游戏。
+// 1) 妙搭全栈版:postMessage 给父页(iframe外壳收,带csrf调server入库)
+// 2) GitHub Pages纯静态版:直连 Supabase REST 插表(配置了 CONFIG.supabase 才走)
+// kind: 'result' → results表 / 'visit' → visits表; row 已是对应表的字段(下划线命名)
+function reportApi(kind, row){
+  // 妙搭外壳路径(保留,行为不变)
+  try{ if(window.parent && window.parent!==window){ window.parent.postMessage(Object.assign({__vcsim__:kind}, row), '*'); } }catch(e){}
+  // Supabase 直连路径
+  try{
+    var sb=(CONFIG&&CONFIG.supabase)||{};
+    if(!sb.url||!sb.key)return; // 未配置则不上报(妙搭版即此情况,只走postMessage)
+    var table=(kind==='result')?'results':(kind==='visit')?'visits':null;
+    if(!table)return;
+    fetch(sb.url.replace(/\/$/,'')+'/rest/v1/'+table,{
+      method:'POST',
+      headers:{
+        'apikey':sb.key,
+        'Authorization':'Bearer '+sb.key,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify(row)
+    }).catch(function(){});
+  }catch(e){}
 }
 function reportResult(payload){
+  // 采集全套局况:基础+风格两维+终局五维属性+胜负数+出局+最佳/最差一投+完整轨迹+是否被邀请+UA
+  var s=state||{};
+  var hist=Array.isArray(fullHistory)?fullHistory:[];
+  var winList=hist.filter(function(h){return h.tier==='SS'||h.tier==='S';});
+  var loseList=hist.filter(function(h){return h.tier==='C'||h.tier==='B';});
+  var ord={SS:5,S:4,A:3,B:2,C:1};
+  var best=winList.slice().sort(function(a,b){return ord[b.tier]-ord[a.tier];})[0];
+  var worst=loseList.slice().sort(function(a,b){return ord[a.tier]-ord[b.tier];})[0];
+  var inv=null; try{inv=getInviter();}catch(e){}
   reportApi('result',{
-    playerId:getPlayerId(), playerName:getPlayerName(),
-    score:payload.score, title:payload.title, style:payload.styleTitle
+    player_id:getPlayerId(), player_name:getPlayerName()||null,
+    score:payload.score, title:payload.title, style:payload.styleTitle,
+    mbti_risk:(typeof mbti==='object'&&mbti)?mbti.risk:null,
+    mbti_mind:(typeof mbti==='object'&&mbti)?mbti.mind:null,
+    win_count:winList.length, lose_count:loseList.length,
+    final_aum:s.aum!=null?Math.round(s.aum):null,
+    final_track:s.track!=null?Math.round(s.track):null,
+    final_net:s.network!=null?Math.round(s.network):null,
+    final_health:s.health!=null?Math.round(s.health):null,
+    final_luck:s.luck!=null?Math.round(s.luck):null,
+    health_dead:(s.health!=null?s.health<=0:null),
+    best_deal:best?(best.tag+' · '+best.name):null,
+    worst_deal:worst?(worst.tag+' · '+worst.name):null,
+    picks:hist.map(function(h){return {year:h.year, tag:h.tag, name:h.name, tier:h.tier};}),
+    is_invited:!!inv,
+    ua:(navigator&&navigator.userAgent)?navigator.userAgent.slice(0,200):null
   });
 }
 function reportVisit(){
   const inv=getInviter();
   reportApi('visit',{
-    visitorId:getPlayerId(), playerName:getPlayerName(),
-    inviterId:inv?inv.id:null, inviterName:inv?inv.name:null
+    visitor_id:getPlayerId(), player_name:getPlayerName()||null,
+    inviter_id:inv?inv.id:null, inviter_name:inv?inv.name:null
   });
 }
 function saveResult(payload){
@@ -119,7 +164,7 @@ function continueGame(){
   if(window.Sfx)Sfx.play('swipe');
   const s=lsGet(SAVE_KEY); if(!s){startGame();return;}
   state={...GAME.start,...s.state}; upPicks=s.upPicks||0; pIdx=s.pIdx; rIdx=s.rIdx; stagedThisPeriod=s.stagedThisPeriod||[];
-  fullHistory=s.fullHistory||[]; mbti=s.mbti||{risk:0,mind:0}; selDeal=null; gameOver=false;
+  fullHistory=s.fullHistory||[]; window.mbti=s.mbti||{risk:0,data:0,horizon:0,focus:0,decisive:0}; selDeal=null; gameOver=false;
   document.getElementById('cover').classList.add('hidden');
   $ending.classList.add('hidden');
   $ending.innerHTML='';
@@ -137,9 +182,19 @@ function viewLastResult(){
   $game.classList.add('hidden');
   const el=$ending; el.classList.remove('hidden');
   el.innerHTML=r.html;
-  // 二维码是当初异步生成的(canvas像素+延迟加白边)，存进 localStorage 的 html 里是空壳，
-  // 回看时必须现场重新生成，否则二维码区空白。
+  // 二维码、雷达图都是 canvas 异步生成的像素,存进 localStorage 的 html 里只剩空壳,
+  // 回看时必须现场重新绘制,否则空白。
   renderShareQR();
+  // 重绘雷达图:用存档时抓下来的 ps/mp/accent 数据(老存档无 radar 字段则跳过,保持向后兼容)
+  if(r.radar && typeof drawRadar==='function' && typeof PROFILE!=='undefined'){
+    const cv=document.getElementById('radarCanvas');
+    if(cv){
+      // 用存档里的 accent 重设容器主题色(原 innerHTML 里 style 已有,这里兜底确保)
+      const wrap=cv.closest('.mbti-block')||cv.parentElement;
+      if(wrap && r.radar.accent) wrap.style.setProperty('--sc', r.radar.accent);
+      requestAnimationFrame(()=>drawRadar(cv, r.radar.ps, r.radar.mp, r.radar.accent));
+    }
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 // 封面初始化：检测存档，动态加按钮
@@ -213,7 +268,7 @@ function startGame(){
   state.spent=0;  // 累计投入(方案A:资本照常涨,评分时减此值体现钱花出去了)
   upPicks=0;
   pIdx=0; rIdx=0; selDeal=null; stagedThisPeriod=[]; fullHistory=[]; gameOver=false;
-  mbti={risk:0,mind:0};
+  window.mbti={risk:0,data:0,horizon:0,focus:0,decisive:0};
   resetShuffle();  // 新局重新洗牌,每局选项顺序不同
   document.getElementById('cover').classList.add('hidden');
   $ending.classList.add('hidden');
@@ -299,7 +354,7 @@ function enterPeriod(){
 }
 function showScenario(){
   const p=GAME.periods[pIdx];
-  const sc=MBTI.scenarios[p.id];
+  const sc=PROFILE.scenarios[p.id];
   if(!sc){ showStory(); return; }
   shuffleOnce(sc.opts);  // 随机展示选项顺序(首次进入本题时洗一次)
   const opts=sc.opts.map((o,i)=>`<div class="sc-opt" data-i="${i}" onclick="pickScenario(${i})">${o.t}</div>`).join('');
@@ -314,7 +369,7 @@ function showScenario(){
 function pickScenario(i){
   if(window.Sfx)Sfx.play('pick');
   const p=GAME.periods[pIdx];
-  const o=MBTI.scenarios[p.id].opts[i];
+  const o=PROFILE.scenarios[p.id].opts[i];
   if(o.e){for(const k in o.e)mbti[k]+=o.e[k];}
   // 选中反馈:仅选中的选项出波纹+弹入效果
   document.querySelectorAll('.sc-opt').forEach(el=>el.classList.toggle('picked',+el.dataset.i===i));
@@ -377,6 +432,7 @@ function showChoices(preselectIdx){
     if(g.type==='aum')   return state.aum   < g.min ? 'aum'   : 0;
     if(g.type==='track') return state.track < g.min ? 'track' : 0;
     if(g.type==='health') return state.health < g.min ? 'health' : 0;  // 硬门槛:所见即所得(健康<显示门槛就锁)
+    if(g.type==='net')   return state.network < g.min ? 'net'  : 0;  // 人脉门槛:资源/关系不够,挤不进这类局
     return 0;
   });
   // 防死局铁律1：全锁 → 强制解锁"门槛最低"的1个(总能投点什么)
@@ -398,7 +454,7 @@ function showChoices(preselectIdx){
     const lk = gateLock[i];
     const small = smallSet[i];
     const afford = !lk;
-    const lockTxt = lk==='aum'?(CONFIG.text.lockNoAum||'资本不足') : lk==='track'?(CONFIG.text.lockNoTrack||'声望不足') : lk==='health'?(CONFIG.text.lockNoHealth||'精力不足') : '';
+    const lockTxt = lk==='aum'?(CONFIG.text.lockNoAum||'资本不足') : lk==='track'?(CONFIG.text.lockNoTrack||'声望不足') : lk==='health'?(CONFIG.text.lockNoHealth||'精力不足') : lk==='net'?(CONFIG.text.lockNoNet||'人脉不足') : '';
     const lockNote = lk ? `<div class="lock-note" style="color:var(--bad)">${lockTxt}</div>` : (small?`<div class="lock-note" style="color:var(--warn)">${CONFIG.text.lockSmall}</div>`:'');
     return `
     <div class="deal ${afford?'':'locked'}" data-i="${i}" ${afford?`onclick="pickDeal(${i})"`:''}>
@@ -410,7 +466,7 @@ function showChoices(preselectIdx){
         <div class="mi"><div class="k">轮次</div><div class="v">${d.round}</div></div>
         <div class="mi"><div class="k">估值</div><div class="v">${d.val}</div></div>
         <div class="mi"><div class="k">需投入</div><div class="v">${d.amt?d.amt+'M':'——'}</div></div>
-        <div class="mi"><div class="k">门槛</div><div class="v">${d.gate?(d.gate.type==='aum'?'资本≥'+d.gate.min:d.gate.type==='track'?'业绩≥'+d.gate.min:'健康≥'+d.gate.min):'无'}</div></div>
+        <div class="mi"><div class="k">门槛</div><div class="v">${d.gate?(d.gate.type==='aum'?'资本≥'+d.gate.min:d.gate.type==='track'?'业绩≥'+d.gate.min:d.gate.type==='net'?'人脉≥'+d.gate.min:'健康≥'+d.gate.min):'无'}</div></div>
       </div>
       <div class="trend ${d.trend}">${ti} ${tl}</div>
     </div>`;}).join('');
@@ -571,17 +627,16 @@ function afterPeriod(healthDead){
 
 
 function calcStyle(){
-  const TH=CONFIG.mbtiMidThreshold;
-  const r=mbti.risk, m=mbti.mind;
-  const rMid=Math.abs(r)<=TH, mMid=Math.abs(m)<=TH;
-  let key;
-  if(rMid && mMid) key='balanced';        // 两维都模糊 → 均衡型
-  else {
-    const rk=r>=0?'aggressive':'steady';
-    const mk=m>=0?'emotional':'rational';
-    key=rk+'_'+mk;
+  // 五维人格：玩家五维(0-100) → 最近人格原型(与大师匹配同源)
+  const ps = (typeof profile6Scores==='function') ? profile6Scores() : null;
+  if(ps && typeof PERSONA5!=='undefined'){
+    const a = PERSONA5.match(ps);
+    const sub = PERSONA5.subFromDims(ps, (typeof PROFILE!=='undefined'&&PROFILE.dims)?PROFILE.dims:[]);
+    return { key:a.key, emoji:a.emoji, title:a.title, sub:sub, color:a.color, tag:a.tag, desc:a.desc };
   }
-  return MBTI.styles[key];
+  // 兜底(PERSONA5/PROFILE 未加载)：返回均衡型
+  return { key:'balanced', emoji:'⚖️', title:'均衡掌舵者', sub:'攻守兼备 · 不走极端', color:'#5a6470',
+    tag:'灵活 · 不走极端', desc:'你没有明显的偏科，能稳能进、能算账也懂得为愿景留温度，像老练的舵手随风浪调整航向。' };
 }
 function mbtiDimBars(){
   // 返回两维度偏向百分比(50中点)。单维度极端累计≈5题×3=15，取 14 为归一化分母
@@ -630,8 +685,10 @@ function showEnding(healthDead){
     <div class="share-card" id="shareCard" style="--accent-c:${meta.color};--ending-bg:${meta.bg||'#f5f1e8'};--ending-glow:${meta.glow||'rgba(184,134,11,.1)'}">
       <div class="sc-head"><div class="emoji">${meta.emoji}</div><div class="rank-label">${CONFIG.text.endingRankLabel}</div><h1>${meta.title}</h1></div>
       <div class="sc-quote">「${meta.quote}」</div>
+
+      <div class="sc-chapter"><span class="ch-name">我的投资生涯</span></div>
       <div class="sc-summary">${meta.summary}</div>
-      <div class="sc-stats">
+      <div class="sc-panel sc-stats">
         <div class="fs"><div class="k">${CONFIG.text.endingStatScore}</div><div class="v">${score}</div></div>
         <div class="fs"><div class="k">${CONFIG.text.endingStatAum}</div><div class="v">${Math.round(state.aum)}</div></div>
         <div class="fs"><div class="k">${CONFIG.text.endingStatTrack}</div><div class="v">${Math.round(state.track)}</div></div>
@@ -641,8 +698,12 @@ function showEnding(healthDead){
         <div class="hl-box win"><div class="t">${CONFIG.text.endingBestTitle}</div>${best?`<div class="nm">${best.name}</div><div class="yr">${best.year} · ${best.tag} · ${ocL[best.tier]}</div>`:`<div class="none">${CONFIG.text.endingBestNone}</div>`}</div>
         <div class="hl-box lose"><div class="t">${CONFIG.text.endingWorstTitle}</div>${worst?`<div class="nm">${worst.name}</div><div class="yr">${worst.year} · ${worst.tag} · ${ocL[worst.tier]}</div>`:`<div class="none">${CONFIG.text.endingWorstNone}</div>`}</div>
       </div>
+
+      <div class="sc-chapter"><span class="ch-name">我是怎样的投资人</span></div>
       <div class="mbti-block" id="mbtiBlock"></div>
-      <div class="sc-record" id="scRecord"><h3>${CONFIG.text.endingRecordHead}</h3>${recRows}</div>
+
+      <div class="sc-chapter" data-chapter="3"><span class="ch-name">二十六年轨迹</span></div>
+      <div class="sc-record" id="scRecord" data-chapter="3">${recRows}</div>
       <div class="sc-foot"><div class="sc-qr" id="scQr"></div><div class="sc-foot-txt">${CONFIG.text.endingFootBrand}<div class="qr-tip">${CONFIG.text.endingFootQrTip}</div></div></div>
     </div>
     <div class="share-actions">
@@ -656,54 +717,158 @@ function showEnding(healthDead){
   // 保存本局结果(供回看) + 清掉中途进度
   gameOver=true; clearProgress();
   const sty=calcStyle();
+  // 抓雷达图所需数据(canvas 像素无法随 innerHTML 持久化,回看时要现场重绘)
+  let radarData=null;
+  try{
+    const _ps=(typeof profile6Scores==='function')?profile6Scores():null;
+    let _mp=null;
+    if(_ps && typeof MASTERS!=='undefined'){ const _m=MASTERS.match(_ps); _mp=_m&&_m.best?_m.best.p6:null; }
+    if(_ps) radarData={ ps:_ps, mp:_mp, accent:sty.color||'#b8860b' };
+  }catch(e){}
   saveResult({
     html: $ending.innerHTML,
-    title: meta.title, score: score, styleTitle: sty.title, ts: Date.now()
+    title: meta.title, score: score, styleTitle: sty.title, ts: Date.now(),
+    radar: radarData
   });
   initCover(); // 刷新封面按钮(下次回来能回看)
   window.scrollTo({top:0,behavior:'smooth'});
 }
+function profile6Scores(){
+  // 把累积的 5 维原始分(单题±4)归一化到 0~100，50 中点
+  const N = (typeof PROFILE!=='undefined' && PROFILE.norm) ? PROFILE.norm : 9;
+  const out = {};
+  PROFILE.dims.forEach(d=>{
+    const v = (mbti[d.key]||0);
+    out[d.key] = Math.round(Math.max(4, Math.min(96, 50 + v / N * 50)));
+  });
+  return out;
+}
+// 画雷达图：playerScores 实线，masterScores 虚线
+function drawRadar(canvas, playerScores, masterScores, accent){
+  const dims = PROFILE.dims;
+  const n = dims.length;
+  const dpr = window.devicePixelRatio || 2;
+  const W = canvas.clientWidth || 320, H = W;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const cx = W/2, cy = H/2, R = W*0.34;
+  const ink = '#9a9285', line = '#d8d0bf';
+  // 同心网格(4 圈)
+  ctx.lineWidth = 1;
+  for(let ring=1; ring<=4; ring++){
+    const r = R*ring/4;
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const ang = -Math.PI/2 + i*2*Math.PI/n;
+      const x = cx + r*Math.cos(ang), y = cy + r*Math.sin(ang);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = line; ctx.globalAlpha = ring===4?0.9:0.5; ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // 轴线 + 轴标签
+  ctx.font = '600 12px -apple-system,"PingFang SC",sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<n;i++){
+    const ang = -Math.PI/2 + i*2*Math.PI/n;
+    const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y);
+    ctx.strokeStyle=line; ctx.globalAlpha=0.6; ctx.stroke(); ctx.globalAlpha=1;
+    const lx = cx + (R+20)*Math.cos(ang), ly = cy + (R+20)*Math.sin(ang);
+    ctx.fillStyle = ink;
+    ctx.fillText(dims[i].axis, lx, ly);
+  }
+  function poly(scores, color, dashed, fill){
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const ang = -Math.PI/2 + i*2*Math.PI/n;
+      const v = (scores[dims[i].key]||50)/100;
+      const x = cx + R*v*Math.cos(ang), y = cy + R*v*Math.sin(ang);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    if(fill){ ctx.fillStyle=color; ctx.globalAlpha=0.12; ctx.fill(); ctx.globalAlpha=1; }
+    ctx.lineWidth = dashed?1.8:2.4;
+    ctx.setLineDash(dashed?[5,4]:[]);
+    ctx.strokeStyle = color; ctx.stroke();
+    ctx.setLineDash([]);
+    // 顶点圆点(仅实线)
+    if(!dashed){
+      for(let i=0;i<n;i++){
+        const ang = -Math.PI/2 + i*2*Math.PI/n;
+        const v = (scores[dims[i].key]||50)/100;
+        const x = cx + R*v*Math.cos(ang), y = cy + R*v*Math.sin(ang);
+        ctx.beginPath(); ctx.arc(x,y,3,0,2*Math.PI); ctx.fillStyle=color; ctx.fill();
+      }
+    }
+  }
+  // 先画大师(虚线) 再画玩家(实线在上)；两者同色(流派色),靠线型区分:你=实线、大师=虚线
+  if(masterScores) poly(masterScores, accent, true, false);
+  poly(playerScores, accent, false, true);
+}
+
 function renderMBTI(){
   const sty=calcStyle();
-  const bars=mbtiDimBars();
   const el=document.getElementById('mbtiBlock'); if(!el)return;
-  // 双向刻度条：左端=neg(稳健/理性)，右端=pos(激进/感性)，圆点落在pct处
-  const dimRows=MBTI.dims.map(dm=>{
-    const b=bars[dm.key];
-    return `<div class="dm2-row">
-      <div class="dm2-left">${dm.neg}</div>
-      <div class="dm2-track"><div class="dm2-fill" style="left:${Math.min(50,b.pct)}%;width:${Math.abs(b.pct-50)}%"></div><div class="dm2-dot" style="left:${b.pct}%"></div></div>
-      <div class="dm2-right">${dm.pos}</div>
-    </div>`;
+  const ps = profile6Scores();
+  let mt=null, b=null;
+  if(typeof MASTERS!=='undefined'){ mt=MASTERS.match(ps); b=mt.best; }
+  // 方案C: 第二部分跟随人格气质色(对齐大师流派色),章节标题仍用结局色
+  const accent = sty.color || (mt?mt.school.color:'#b8860b');
+  el.style.setProperty('--sc', accent);  // 容器主题色=人格色,子元素(人格卡/大师卡/雷达/图例/数值条)全继承
+  const others = mt ? mt.others.map(o=>`<span class="mm-other">${o.emoji} ${o.name.replace(/\(.*\)/,'')}</span>`).join('') : '';
+  // 图例 + 5 维数值条
+  const legend = mt ? `<div class="radar-legend">
+      <span class="lg lg-you"><i></i>你</span>
+      <span class="lg lg-master"><i></i>${b.name.replace(/\(.*\)/,'')}</span>
+    </div>` : '';
+  const dimList = PROFILE.dims.map(d=>{
+    const v = ps[d.key];
+    const label = v>=58?d.high : (v<=42?d.low : '均衡');
+    return `<div class="p6-row"><span class="p6-axis">${d.axis}</span><div class="p6-bar"><i style="width:${v}%"></i></div><span class="p6-val">${label}</span></div>`;
   }).join('');
-  // 投资大师匹配卡
+
   let masterHTML='';
-  if(typeof MASTERS!=='undefined'){
-    const mt=MASTERS.match(mbti.risk, mbti.mind);
-    const b=mt.best;
-    const others=mt.others.map(o=>`<span class="mm-other">${o.emoji} ${o.name.replace(/\(.*\)/,'')}</span>`).join('');
+  if(mt){
+    const pSrc=(window.PORTRAITS_INLINE&&window.PORTRAITS_INLINE[b.id])||('portraits/'+b.id+'.jpg');
+    const pctTxt=(typeof mt.bestPct==='number')?mt.bestPct:'';
     masterHTML=`
-    <div class="master-head"><h3>你的投资人格最像</h3></div>
-    <div class="master-card" style="--sc:${mt.school.color}">
-      <div class="mm-emoji">${b.emoji}</div>
+    <div class="master-card">
+      <div class="mm-portrait" style="background-image:url('${pSrc}')"><span class="mm-emoji-mini">${b.emoji}</span></div>
       <div class="mm-name">${b.name}</div>
       <div class="mm-en">${b.en}</div>
+      ${pctTxt!==''?`<div class="mm-pct"><span class="mm-pct-num">${pctTxt}%</span> 相似度</div>`:''}
       <div class="mm-school">${mt.school.name} · ${b.tags}</div>
-      <div class="mm-blurb">${b.blurb}</div>
+      <div class="mm-blurb"><span class="mm-bridge">${(typeof PERSONA5!=='undefined')?PERSONA5.bridge(ps, b.p6, b.name, (typeof PROFILE!=='undefined'&&PROFILE.dims)?PROFILE.dims:[]):''}</span>${b.blurb}</div>
       <div class="mm-others-wrap"><span class="mm-others-label">你也有点像</span>${others}</div>
     </div>`;
   }
+
   el.innerHTML=`
-    <div class="mbti-head"><h3>${CONFIG.text.mbtiHead}</h3></div>
-    <div class="mbti-card" style="--mc:${sty.color}">
+    <div class="sc-sub-head"><span class="sh-emoji">🎭</span>投资人格画像<span class="sh-emoji">🎭</span></div>
+    <div class="mbti-card">
       <div class="mc-emoji">${sty.emoji}</div>
       <div class="mc-title">${sty.title}</div>
       <div class="mc-sub">${sty.sub}</div>
       <div class="mc-tag">${sty.tag}</div>
       <div class="mc-desc">${sty.desc}</div>
     </div>
-    <div class="mbti-dims2">${dimRows}</div>
-    ${masterHTML}`;
+    <div class="sc-sub-head"><span class="sh-emoji">🌟</span>你最像的投资大师<span class="sh-emoji">🌟</span></div>
+    ${masterHTML}
+    <div class="sc-sub-head"><span class="sh-emoji">📊</span>五维人格对比<span class="sh-emoji">📊</span></div>
+    <div class="radar-wrap">
+      <canvas id="radarCanvas" class="radar-canvas"></canvas>
+      ${legend}
+    </div>
+    <div class="p6-list">${dimList}</div>`;
+  // 画雷达图(canvas 需在 DOM 后绘制)
+  const cv = document.getElementById('radarCanvas');
+  if(cv && typeof PROFILE!=='undefined'){
+    requestAnimationFrame(()=>drawRadar(cv, ps, b?b.p6:null, accent));
+  }
 }
 
 function toast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),ms||2200);}
@@ -714,22 +879,36 @@ function genImage(){
   if(window.Sfx)Sfx.play('click');
   const card=document.getElementById('shareCard');
   // 截图前临时隐藏「二十六年投资轨迹」明细块(页面仍显示,只是不进截图,避免截图过长)
-  const rec=document.getElementById('scRecord');
-  if(rec) rec.style.display='none';
-  const restore=()=>{ if(rec) rec.style.display=''; window._genImaging=false; };  // 恢复为CSS默认(block),不依赖快照值
+  // 截图时隐藏整个章节叁(章节标题+轨迹明细)，页面仍显示,仅不进截图避免太长
+  const ch3=Array.from(document.querySelectorAll('[data-chapter="3"]'));
+  ch3.forEach(n=>n.style.display='none');
+  const restore=()=>{ ch3.forEach(n=>n.style.display=''); window._genImaging=false; };  // 恢复为CSS默认(block),不依赖快照值
   // H1加固:二维码是异步生成(白边重绘),若截图时还没就绪(回看页秒点)会截到空/半成品.先确保就绪.
   const qrReady=()=>{ const i=document.querySelector('#scQr img'); return i && i.src && i.src.indexOf('data:image')===0; };
   if(!qrReady() && typeof renderShareQR==='function'){ renderShareQR(); }  // 没就绪就补生成一次
   toast(CONFIG.text.genImageWait,4000);
   const shoot=()=>{
-    html2canvas(card,{scale:2,backgroundColor:'#f5f1e8',useCORS:true,logging:false,windowWidth:card.scrollWidth}).then(canvas=>{
+    // 方案A:按结果页真实显示宽度×设备 dpr 截图(所见即所得),取消高度限制尽量清晰.
+    // 已去掉第三章节(轨迹明细),卡片高度可控,不压 scale.
+    const dpr=window.devicePixelRatio||1;
+    let scale=Math.max(2, dpr);  // 至少 2,高分屏跟 dpr(不设上限,尽量清晰)
+    // 极端保护:位图高度超 12000px 才限一下(防个别老手机崩溃),正常不触发
+    const ch=card.scrollHeight||2400;
+    if(ch*scale>12000){ scale=Math.max(2, 12000/ch); }
+    html2canvas(card,{scale:scale,backgroundColor:'#f5f1e8',useCORS:true,logging:false,windowWidth:card.scrollWidth}).then(canvas=>{
       restore();  // 截完立即恢复显示
-      const dataUrl=canvas.toDataURL('image/png');
+      // 用 JPEG(q0.92)而非 PNG:PNG 长图 dataURL 常 >1MB,手机解码慢/易失败;JPEG 体积约 1/3,渲染更稳
+      let dataUrl;
+      try{ dataUrl=canvas.toDataURL('image/jpeg',0.92); }catch(e){ dataUrl=canvas.toDataURL('image/png'); }
       const modal=document.getElementById('imgModal');
-      document.getElementById('imgOut').src=dataUrl;
+      const imgEl=document.getElementById('imgOut');
       document.getElementById('imgTip').innerHTML=CONFIG.text.genImageTip;
-      modal.classList.add('show');
-      toast(CONFIG.text.genImageOk,1500);
+      // 关键:等图片真正解码完成(onload)再显示 modal,避免大图未就绪时 modal 一闪而过
+      imgEl.onload=()=>{ modal.classList.add('show'); toast(CONFIG.text.genImageOk,1500); };
+      imgEl.onerror=()=>{ toast(CONFIG.text.genImageFail,3000); };
+      imgEl.src=dataUrl;
+      // 兜底:个别浏览器对已缓存/同源 dataURL 不触发 onload,250ms 后强制显示一次
+      setTimeout(()=>{ if(!modal.classList.contains('show')){ modal.classList.add('show'); } },250);
     }).catch(e=>{restore();console.error(e);toast(CONFIG.text.genImageFail,3000);});
   };
   // 轮询等二维码就绪(最多~500ms),就绪即截;兜底超时也截(不卡死)
