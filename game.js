@@ -182,9 +182,19 @@ function viewLastResult(){
   $game.classList.add('hidden');
   const el=$ending; el.classList.remove('hidden');
   el.innerHTML=r.html;
-  // 二维码是当初异步生成的(canvas像素+延迟加白边)，存进 localStorage 的 html 里是空壳，
-  // 回看时必须现场重新生成，否则二维码区空白。
+  // 二维码、雷达图都是 canvas 异步生成的像素,存进 localStorage 的 html 里只剩空壳,
+  // 回看时必须现场重新绘制,否则空白。
   renderShareQR();
+  // 重绘雷达图:用存档时抓下来的 ps/mp/accent 数据(老存档无 radar 字段则跳过,保持向后兼容)
+  if(r.radar && typeof drawRadar==='function' && typeof PROFILE!=='undefined'){
+    const cv=document.getElementById('radarCanvas');
+    if(cv){
+      // 用存档里的 accent 重设容器主题色(原 innerHTML 里 style 已有,这里兜底确保)
+      const wrap=cv.closest('.mbti-block')||cv.parentElement;
+      if(wrap && r.radar.accent) wrap.style.setProperty('--sc', r.radar.accent);
+      requestAnimationFrame(()=>drawRadar(cv, r.radar.ps, r.radar.mp, r.radar.accent));
+    }
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 // 封面初始化：检测存档，动态加按钮
@@ -707,9 +717,18 @@ function showEnding(healthDead){
   // 保存本局结果(供回看) + 清掉中途进度
   gameOver=true; clearProgress();
   const sty=calcStyle();
+  // 抓雷达图所需数据(canvas 像素无法随 innerHTML 持久化,回看时要现场重绘)
+  let radarData=null;
+  try{
+    const _ps=(typeof profile6Scores==='function')?profile6Scores():null;
+    let _mp=null;
+    if(_ps && typeof MASTERS!=='undefined'){ const _m=MASTERS.match(_ps); _mp=_m&&_m.best?_m.best.p6:null; }
+    if(_ps) radarData={ ps:_ps, mp:_mp, accent:sty.color||'#b8860b' };
+  }catch(e){}
   saveResult({
     html: $ending.innerHTML,
-    title: meta.title, score: score, styleTitle: sty.title, ts: Date.now()
+    title: meta.title, score: score, styleTitle: sty.title, ts: Date.now(),
+    radar: radarData
   });
   initCover(); // 刷新封面按钮(下次回来能回看)
   window.scrollTo({top:0,behavior:'smooth'});
