@@ -156,7 +156,7 @@
 <div class="wrap" id="mainWrap" style="display:none">
   <div class="game-name">中国创业投资模拟器</div>
   <h1>⚙️ 后台管理</h1>
-  <div class="sub" id="topSub">五合一控制台<span class="logout" id="logout">退出</span></div>
+  <div class="sub" id="topSub">游戏后台<span class="logout" id="logout">退出</span></div>
   <div class="tabs">
     <div class="tab on" data-p="stats">📊 数据</div>
     <div class="tab" data-p="doc">🧮 机制</div>
@@ -172,12 +172,12 @@
   <!-- 📐 数值手册（机制+音效+技术配置） -->
   <div class="page" id="tab-doc">
     <div id="docContent"></div>
-    <!-- 🎵 音效试听（融入手册） -->
+    <!-- 🎵 音效试听 -->
     <div class="panel" id="sfxPanel">
       <h2>🎵 音效试听</h2>
       <div class="sub" style="margin:2px 0 12px;display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft)">
         <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);flex:0 0 22px"><span style="width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent #fff;margin-left:2px"></span></span>
-        <span><b>点任意一行即可播放试听</b>，挑出要改的告诉小龙虾。</span>
+        <span><b>点任意一行即可播放试听</b>。</span>
       </div>
       <div id="sfxList"></div>
     </div>
@@ -202,15 +202,15 @@
   <div class="page" id="tab-cfg"></div>
 
 
-  <div class="footer"><span style="white-space:nowrap">🦞 小龙虾出品</span> · 后台四合一 · 数据＝游戏真实配置</div>
+  <div class="footer"><span style="white-space:nowrap">🦞 小龙虾出品</span> · 数据＝游戏真实配置实时读取</div>
 </div>
 
-<script src="config.js?v=20260629admin4"></script>
-<script src="data-periods.js?v=20260629admin4"></script>
-<script src="data-endings.js?v=20260629admin4"></script>
-<script src="data-persona5.js?v=20260629admin4"></script>
-<script src="data-profile6.js?v=20260629admin4"></script>
-<script src="engine-sfx.js?v=20260629admin4"></script>
+<script src="config.js?v=20260629admin5"></script>
+<script src="data-periods.js?v=20260629admin5"></script>
+<script src="data-endings.js?v=20260629admin5"></script>
+<script src="data-persona5.js?v=20260629admin5"></script>
+<script src="data-profile6.js?v=20260629admin5"></script>
+<script src="engine-sfx.js?v=20260629admin5"></script>
 <script>
 "use strict";
 /* ===================== 公共 ===================== */
@@ -406,6 +406,44 @@ function renderConfig(){
   h+='<div class="panel"><h2>🖼 封面与通用 UI 文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.ui</span></h2>';
   h+=kvTable(C.ui)+'</div>';
 
+  // 介绍首页卡片
+  h+='<div class="panel"><h2>📖 介绍首页卡片 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.intro</span></h2>';
+  (C.intro||[]).forEach(function(card,i){
+    h+='<div class="formula" style="border-left-color:var(--blue)"><b>'+esc(card.icon)+' '+esc(card.title)+'</b>\n'+showBr(card.body)+'</div>';
+  });
+  h+='</div>';
+
+  // 游戏内文案
+  h+='<div class="panel"><h2>💬 游戏内文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.text</span></h2>';
+  var T=C.text;
+  h+='<div class="pgrp-t" style="margin-top:4px">五档揭晓点评</div>';
+  h+=kvTable({SS:T.tierSS,S:T.tierS,A:T.tierA,B:T.tierB,C:T.tierC});
+  h+='<div class="pgrp-t" style="margin-top:12px">流程/页面文案</div>';
+  var skip={tierSS:1,tierS:1,tierA:1,tierB:1,tierC:1,titles:1,btnAfterPeriod:1,outcomeShort:1};
+  var rest={};Object.keys(T).forEach(function(k){if(!skip[k])rest[k]=T[k];});
+  h+=kvTable(rest);
+  if(T.outcomeShort){h+='<div class="pgrp-t" style="margin-top:12px">五档结果简称 · 轨迹表/高光框用 (outcomeShort)</div>'+kvTable(T.outcomeShort);}
+  if(T.btnAfterPeriod){h+='<div class="pgrp-t" style="margin-top:12px">时代落幕按钮文案 (btnAfterPeriod)</div>'+kvTable(T.btnAfterPeriod);}
+  if(T.titles){h+='<div class="pgrp-t" style="margin-top:12px">投资人头衔进阶 (titles)</div><div class="txt">'+T.titles.map(function(t,i){return (i+1)+'. '+esc(t);}).join(' → ')+'</div>';}
+  h+='</div>';
+
+  // 🏆 结局称号完整文案(名言+解读;门槛数值在「机制」tab)
+  if(typeof DATA_ENDINGS!=="undefined" && DATA_ENDINGS.endingMeta){
+    var EM=DATA_ENDINGS.endingMeta;
+    var eorder=["legend","master","veteran","steady","rollercoaster","exit","earlyout"];
+    h+='<div class="panel"><h2>🏆 结局称号 · 文案 <span style="font-size:11px;color:#8c857a;font-weight:600">data-endings.js · 门槛见「机制」tab</span></h2>';
+    eorder.forEach(function(k){
+      var m=EM[k]; if(!m)return;
+      var col=esc(m.color||"#b8860b");
+      h+='<div class="formula" style="border-left-color:'+col+'">';
+      h+='<b style="color:'+col+';font-size:14px">'+esc(m.emoji)+" "+esc(m.title)+'</b>';
+      h+="\n💬 名言："+showBr(m.quote);
+      h+="\n📖 解读："+showBr(m.summary);
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
   // 五维投资人格(从 data-persona5.js 读, 6人格←→6大师)
   if(typeof PERSONA5!=="undefined" && PERSONA5.archetypes){
     var MNAME={buffett:'巴菲特',simons:'西蒙斯',soros:'索罗斯',wood:'木头姐',trumpish:'豪赌狂人',muskish:'钢铁狂想家'};
@@ -449,44 +487,6 @@ function renderConfig(){
         var eff=Object.keys(o.e||{}).map(function(kk){return kk+(o.e[kk]>=0?"+":"")+o.e[kk];}).join(" ")||"无倾向";
         h+="\n"+(i+1)+". "+esc(o.t)+'  <span style="color:#8c857a;font-size:11px">['+esc(eff)+']</span>';
       });
-      h+='</div>';
-    });
-    h+='</div>';
-  }
-
-  // 介绍首页卡片
-  h+='<div class="panel"><h2>📖 介绍首页卡片 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.intro</span></h2>';
-  (C.intro||[]).forEach(function(card,i){
-    h+='<div class="formula" style="border-left-color:var(--blue)"><b>'+esc(card.icon)+' '+esc(card.title)+'</b>\n'+showBr(card.body)+'</div>';
-  });
-  h+='</div>';
-
-  // 游戏内文案
-  h+='<div class="panel"><h2>💬 游戏内文案 <span style="font-size:11px;color:#8c857a;font-weight:600">CONFIG.text</span></h2>';
-  var T=C.text;
-  h+='<div class="pgrp-t" style="margin-top:4px">五档揭晓点评</div>';
-  h+=kvTable({SS:T.tierSS,S:T.tierS,A:T.tierA,B:T.tierB,C:T.tierC});
-  h+='<div class="pgrp-t" style="margin-top:12px">流程/页面文案</div>';
-  var skip={tierSS:1,tierS:1,tierA:1,tierB:1,tierC:1,titles:1,btnAfterPeriod:1,outcomeShort:1};
-  var rest={};Object.keys(T).forEach(function(k){if(!skip[k])rest[k]=T[k];});
-  h+=kvTable(rest);
-  if(T.outcomeShort){h+='<div class="pgrp-t" style="margin-top:12px">五档结果简称 · 轨迹表/高光框用 (outcomeShort)</div>'+kvTable(T.outcomeShort);}
-  if(T.btnAfterPeriod){h+='<div class="pgrp-t" style="margin-top:12px">时代落幕按钮文案 (btnAfterPeriod)</div>'+kvTable(T.btnAfterPeriod);}
-  if(T.titles){h+='<div class="pgrp-t" style="margin-top:12px">投资人头衔进阶 (titles)</div><div class="txt">'+T.titles.map(function(t,i){return (i+1)+'. '+esc(t);}).join(' → ')+'</div>';}
-  h+='</div>';
-
-  // 🏆 结局称号完整文案(名言+解读;门槛数值在「机制」tab)
-  if(typeof DATA_ENDINGS!=="undefined" && DATA_ENDINGS.endingMeta){
-    var EM=DATA_ENDINGS.endingMeta;
-    var eorder=["legend","master","veteran","steady","rollercoaster","exit","earlyout"];
-    h+='<div class="panel"><h2>🏆 结局称号 · 文案 <span style="font-size:11px;color:#8c857a;font-weight:600">data-endings.js · 门槛见「机制」tab</span></h2>';
-    eorder.forEach(function(k){
-      var m=EM[k]; if(!m)return;
-      var col=esc(m.color||"#b8860b");
-      h+='<div class="formula" style="border-left-color:'+col+'">';
-      h+='<b style="color:'+col+';font-size:14px">'+esc(m.emoji)+" "+esc(m.title)+'</b>';
-      h+="\n💬 名言："+showBr(m.quote);
-      h+="\n📖 解读："+showBr(m.summary);
       h+='</div>';
     });
     h+='</div>';
@@ -826,19 +826,11 @@ function makeMusicRow(file,label,ds){
     if(bgmPlaying===row){ stopBgm(); return; }
     stopBgm();
     if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-    bgmAudio.src='audio/'+file+'?v=20260629admin4';
+    bgmAudio.src='audio/'+file+'?v=20260629admin5';
     bgmAudio.play().catch(()=>{});
     row.classList.add('playing'); bgmPlaying=row;
   }catch(e){} };
   return row;
-}
-function musicGroupNamed(title, suffix, names){
-  const g=document.createElement('div'); g.className='grp';
-  g.innerHTML='<div class="grp-t">'+title+'</div>';
-  ['P1','P2','P3','P4','P5'].forEach(function(k){
-    g.appendChild(makeMusicRow(k+suffix+'.mp3', TIMES[k], '改编自《'+names[k]+'》'));
-  });
-  list.appendChild(g);
 }
 function musicGroup(title, suffix, ds){
   const g=document.createElement('div'); g.className='grp';
@@ -848,16 +840,8 @@ function musicGroup(title, suffix, ds){
   });
   list.appendChild(g);
 }
-// 时代代表选曲(主人要的:按时代选标志性曲目)2版 + 之前的原版 + 手作对比
-const NAMES_S1={P1:'老鼠爱大米',P2:'青花瓷',P3:'最炫民族风',P4:'海阔天空',P5:'赛博朋克电子'};
-const NAMES_S2={P1:'2002年的第一场雪',P2:'七里香',P3:'小苹果',P4:'孤勇者',P5:'Time·Inception'};
-const NAMES_R={P1:'清晨',P2:'天空之城',P3:'起风了',P4:'夜空中最亮的星',P5:'Time·HansZimmer'};
-musicGroupNamed('🎵 时代代表 · 选曲1','s1',NAMES_S1);
-musicGroupNamed('🎵 时代代表 · 选曲2','s2',NAMES_S2);
-musicGroupNamed('🎵 真实改编 · 原版(第一版)','r',NAMES_R);
-musicGroup('🎵 手作A(五声中国风)','v2','古筝/笛/弦乐');
-musicGroup('🎵 手作B(轻柔现代)','v3','钢琴/pad');
-musicGroup('🎵 旧版(对比用)','','原中国风轻音乐');
+// 背景音乐(游戏实际使用的就是这套: audio/P1.mp3 ~ P5.mp3,无后缀)
+musicGroup('🎵 时代背景音乐 · 5 时代各一首','','游戏实际播放·胡伟立风格配乐');
 // 整页首次触摸/点击即解锁
 
 
