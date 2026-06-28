@@ -161,7 +161,7 @@ const CONFIG = {
     endingBestNone: '这一生，未曾抓住真正的大鱼',
     endingWorstNone: '谨慎如你，未踩重大深坑',
     endingRecordHead: '— 二十六年投资轨迹 —',
-    endingFootBrand: '中国创业投资模拟器 · <b>2000—2026</b> · 🦞 小龙虾出品',
+    endingFootBrand: '中国创业投资模拟器 · <b>2000—2026</b> · <span style="white-space:nowrap">🦞 小龙虾出品</span>',
     endingFootQrTip: '长按扫码走一遍你的投资人生 · 仅供娱乐',
     // 五档结果简称(轨迹表/高光框用，区别于 outcomeTiers.label 长名)
     outcomeShort: { SS:'传奇', S:'命中', A:'保本', B:'失利', C:'惨败' },
