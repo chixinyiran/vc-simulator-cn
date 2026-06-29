@@ -50,7 +50,7 @@
 
   /* 横条统计(称号/风格/趋势分布等,stats+tune 共用) */
   .row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:clamp(12px,3vw,13px);}
-  .row .nm{flex:0 0 clamp(92px,28vw,140px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+  .row .nm{flex:0 0 clamp(96px,30vw,150px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
   .row .e{flex:0 0 18px;text-align:center;font-size:15px;}
   .row .barwrap{flex:1;min-width:40px;height:17px;background:rgba(26,23,20,.06);border-radius:5px;position:relative;overflow:hidden;}
   .row .bar{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:var(--accent);transition:width .4s;min-width:2px;}
@@ -248,12 +248,12 @@
   <div class="footer"><span style="white-space:nowrap">🦞 小龙虾出品</span> · 所有数值实时读自游戏真实配置，所见即所玩</div>
 </div>
 
-<script src="config.js?v=20260629admin23"></script>
-<script src="data-periods.js?v=20260629admin23"></script>
-<script src="data-endings.js?v=20260629admin23"></script>
-<script src="data-persona5.js?v=20260629admin23"></script>
-<script src="data-profile6.js?v=20260629admin23"></script>
-<script src="engine-sfx.js?v=20260629admin23"></script>
+<script src="config.js?v=20260629admin24"></script>
+<script src="data-periods.js?v=20260629admin24"></script>
+<script src="data-endings.js?v=20260629admin24"></script>
+<script src="data-persona5.js?v=20260629admin24"></script>
+<script src="data-profile6.js?v=20260629admin24"></script>
+<script src="engine-sfx.js?v=20260629admin24"></script>
 <script>
 "use strict";
 /* ===================== 公共 ===================== */
@@ -989,7 +989,7 @@ function makeMusicRow(file,label,ds){
     if(bgmPlaying===row){ stopBgm(); return; }
     stopBgm();
     if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-    bgmAudio.src='audio/'+file+'?v=20260629admin23';
+    bgmAudio.src='audio/'+file+'?v=20260629admin24';
     bgmAudio.play().catch(()=>{});
     row.classList.add('playing'); bgmPlaying=row;
   }catch(e){} };
