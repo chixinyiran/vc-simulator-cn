@@ -1,3 +1,9 @@
+/* ============================================================
+ * data-bundle.js — 游戏数据合集(自动合并,勿手改单块,改原始 data-*.js 后重跑 merge_js.py)
+ * 含: DATA_PERIODS / DATA_ENDINGS / PERSONA5 / PROFILE / MASTERS
+ * ============================================================ */
+
+/* ===== data-periods.js ===== */
 const DATA_PERIODS = {
   "periods": [
     {
@@ -1459,3 +1465,263 @@ const DATA_PERIODS = {
     }
   ]
 };
+if(typeof window!=='undefined'&&typeof DATA_PERIODS!=='undefined')window.DATA_PERIODS=DATA_PERIODS;
+
+/* ===== data-endings.js ===== */
+// ===== 结局阈值 + 结局称号文案 =====
+// 改档位线/结局名/解读名言 改这里
+// 作者 小龙虾
+
+const DATA_ENDINGS = {
+  endingTiers: [
+    { min: 700, key: "legend" },
+    { min: 550, key: "master" },
+    { min: 400, key: "veteran" },
+    { min: 250, key: "steady" },
+    { min: 150, key: "rollercoaster" },
+    { min: 0,   key: "exit" },
+  ],
+  endingMeta: {
+    legend: { emoji:"👑", title:"封神级 · 时代的造王者", color:"#b8860b", bg:"#faf3e0", glow:"rgba(184,134,11,.12)",
+      quote:"真正伟大的投资，是在所有人看不见的地方，提前下注未来。",
+      summary:"二十六年，你穿越了三个完整的技术时代——PC互联网、移动互联网、人工智能，几乎押中了每一次范式革命。你不是在追逐风口，而是在定义风口。后来者把你的每一次出手编进教科书，称之为「神之一手」。但只有你知道，这背后是无数不眠之夜、几次鬼门关前的徘徊，和那些至今想起仍隐隐作痛的失败。这，就是投资的全部重量。" },
+    master: { emoji:"🌟", title:"一线传奇 · 穿越周期的老兵",  color:"#2c5282", bg:"#eef3f8", glow:"rgba(44,82,130,.10)",
+      quote:"在别人贪婪时恐惧，在别人恐惧时贪婪——知易行难，而你做到了。",
+      summary:"二十六年浮沉，你成为中国创投圈公认的一线投资人。你为LP创造了丰厚回报，投出过数个明星项目，也踩过刻骨铭心的坑。你早已不是当年那个追风口的年轻人，而是懂得在喧嚣中保持冷静、在寒冬里看见春天的老兵。江湖上有你的传说，而你最珍视的，是那份穿越牛熊的定力。" },
+    veteran: { emoji:"💼", title:"资深合伙人 · 稳健的常胜者", color:"#3c6b4f", bg:"#eef4ef", glow:"rgba(60,107,79,.10)",
+      quote:"投资是一场概率游戏——不求每次都对，但求长期不输。",
+      summary:"二十六年下来，你成为一名受人尊敬的基金合伙人。你没有投出改变世界的超级独角兽，但你为LP稳稳地赚到了钱，建立了扎实的口碑。你深知投资的真谛是控制回撤、积小胜为大胜。在这个充满诱惑和陷阱的行业里，能稳健地活过二十六年、还能体面地继续掌舵，本身就是一种了不起的成功。" },
+    steady: { emoji:"⚖️", title:"稳进玩家 · 及格线上的幸存者", color:"#5a6470", bg:"#f0f1f3", glow:"rgba(90,100,112,.10)",
+      quote:"活下来，比什么都重要。在这个行业，幸存本身就是一种天赋。",
+      summary:"二十六年的创投生涯，你算是稳稳地站住了。有过亮眼的项目，也踩过几个深坑，整体打成了一场不功不过的均衡局。你没能跻身顶级，但也从未出局——在一个九死一生的行业里，这份韧性弥足珍贵。回望来路，你既有遗憾，也有庆幸：至少，你一直都在牌桌上。" },
+    rollercoaster: { emoji:"🎢", title:"过山车选手 · 大起大落的赌徒", color:"#9a7b3a", bg:"#f7f1e3", glow:"rgba(154,123,58,.12)",
+      quote:"风口上飞得越高，落地时摔得越疼——这是我用真金白银换来的教训。",
+      summary:"二十六年像一场惊心动魄的过山车。你抓住过风口、押中过黑马，也在P2P、共享单车、教育双减这些时代陷阱里栽过大跟头。你的业绩账本上，辉煌和惨败几乎相互抵消。你比谁都懂「贪婪」和「恐惧」的滋味，只是常常控制不住。能在这样的跌宕里坚持二十六年，你已赢过了绝大多数同行。" },
+    exit: { emoji:"📉", title:"离场的勇者 · 时代浪潮的祭品", color:"#a8453a", bg:"#f9eeec", glow:"rgba(168,69,58,.10)",
+      quote:"这个行业本就九死一生——能在惊涛骇浪里搏击二十六年，已是勇敢。",
+      summary:"二十六年的创投之路，最终没能走到理想的彼岸。几次重仓踩中了时代最深的陷阱，每一个都让你元气大伤。LP渐渐失去耐心，基金募资越来越难，你的牌桌慢慢散了。但请不要太苛责自己：你曾全心全意地相信过、热爱过、拼搏过。或许，是时候带着这一身故事和伤疤，去开启人生的下一段旅程了——那里，会有新的牌桌。" },
+    earlyout: { emoji:"🏥", title:"健康透支 · 倒在半途的拼命者", color:"#7d5a3a", bg:"#f5efe6", glow:"rgba(125,90,58,.10)",
+      quote:"我赢了市场，却输给了身体。再高的回报，也买不回健康。",
+      summary:"你太拼了。无数个不眠之夜、无数场酒局应酬、无数次在鬼门关前透支自己。终于，在生涯尚未走到终点时，身体彻底垮了。你或许投出过漂亮的项目，攒下过不错的声望，但这一切，都在病床前显得苍白。这是一个迟来的提醒：投资是一场马拉松，活着跑到终点，才有资格谈胜负。" },
+  },
+};
+if(typeof window!=='undefined'&&typeof DATA_ENDINGS!=='undefined')window.DATA_ENDINGS=DATA_ENDINGS;
+
+/* ===== data-persona5.js ===== */
+// 五维投资人格画像数据层（与 6 大师一一对应，同源）
+// 玩家五维(0-100) → 欧氏距离最近的人格原型 = 你的人格，必然对应同名大师
+// 五维：risk 稳健↔激进 / data 直觉↔理性 / horizon 短线↔长期 / focus 分散↔集中 / decisive 观望↔果断
+// 人格 anchor 直接采用对应大师的五维坐标；配色对齐大师流派色（两 wildcard 错开）
+// 作者 小龙虾
+
+const PERSONA5 = {
+  DIM: ['risk','data','horizon','focus','decisive'],
+  // 6 大人格原型 ←→ 6 大师 一一对应
+  archetypes: [
+    { key:'value_keeper', emoji:'🏛️', title:'价值守望者', color:'#2c5282', master:'buffett',
+      anchor:{risk:15,data:85,horizon:100,focus:95,decisive:40},
+      tag:'看得懂才下手 · 时间的朋友',
+      desc:'你只投看得懂、算得清的确定性，认准了就攥住几十年不撒手。不追风口、不赌运气，靠耐心和复利穿越周期——慢，是你最快的路。' },
+    { key:'quant_mind', emoji:'📐', title:'理性量化客', color:'#5a4b8a', master:'simons',
+      anchor:{risk:65,data:100,horizon:10,focus:15,decisive:100},
+      tag:'只信数据 · 拒绝故事',
+      desc:'你对故事和情怀完全免疫，只信数字和模型。在市场噪音里捞出确定的金子，让数学替你做决定——你赢在概率，而不是直觉。' },
+    { key:'trend_hunter', emoji:'⚡', title:'趋势猎手', color:'#b8860b', master:'soros',
+      anchor:{risk:80,data:66,horizon:20,focus:88,decisive:89},
+      tag:'嗅觉敏锐 · 心狠手快',
+      desc:'你嗅觉敏锐、出手凶狠，敢在所有人恐慌时反向重拳出击。看准了就倾尽全力，市场的裂缝就是你的猎场——快、准、狠，是你的信条。' },
+    { key:'visionary', emoji:'🚀', title:'远见布道者', color:'#3c6b4f', master:'wood',
+      anchor:{risk:100,data:70,horizon:70,focus:65,decisive:95},
+      tag:'押注未来 · 全情下注',
+      desc:'你为"改变世界的未来"全情下注，相信伟大的技术和愿景，敢在别人看不清时冲在最前面。大起大落，但你从不后悔燃烧过。' },
+    { key:'all_in_gambler', emoji:'🃏', title:'孤注豪赌客', color:'#b04a3a', master:'trumpish',
+      anchor:{risk:94,data:35,horizon:34,focus:92,decisive:85},
+      tag:'极致自信 · 我赌我赢',
+      desc:'你信自己的直觉胜过一切数据，越多人唱反调你越来劲，看准了就梭哈全部身家——赢了封神，输了也昂着头说"这是史上最好的交易"。' },
+    { key:'moonshot', emoji:'🛸', title:'狂想押注者', color:'#a0522d', master:'muskish',
+      anchor:{risk:88,data:35,horizon:99,focus:88,decisive:91},
+      tag:'星辰大海 · 押注疯狂',
+      desc:'别人算 ROI，你算"这能不能改变人类文明"。你押的从来不是公司，是科幻照进现实——要么名垂青史，要么血本无归，中间地带不存在。' },
+  ],
+
+  match(ps){
+    let best=null, bd=1e9;
+    for(const a of this.archetypes){
+      let s=0;
+      for(const k of this.DIM){ const d=(ps[k]||50)-a.anchor[k]; s+=d*d; }
+      const dist=Math.sqrt(s);
+      if(dist<bd){ bd=dist; best=a; }
+    }
+    return best;
+  },
+
+  // 动态副标题：取偏离中点最远的前 3 维，拼成"激进·理性·长期"
+  subFromDims(ps, dimsMeta){
+    const arr = this.DIM.map(k=>{
+      const v=ps[k]!=null?ps[k]:50;
+      const meta=dimsMeta.find(d=>d.key===k);
+      const word = v>=50 ? (meta?meta.high:k) : (meta?meta.low:k);
+      return { k, dev:Math.abs(v-50), word };
+    }).sort((a,b)=>b.dev-a.dev);
+    const picked = arr.filter(x=>x.dev>=8).slice(0,3).map(x=>x.word);
+    return picked.length? picked.join(' · ') : '攻守兼备 · 不走极端';
+  },
+
+  // 桥接句：玩家和匹配大师在哪 1-2 维最契合
+  bridge(ps, masterP6, masterName, dimsMeta){
+    const cand = this.DIM.map(k=>{
+      const pv=ps[k]!=null?ps[k]:50;
+      const mv=masterP6[k]!=null?masterP6[k]:50;
+      return { k, diff:Math.abs(pv-mv), dev:Math.abs(pv-50), pv };
+    }).filter(x=>x.dev>=15).sort((a,b)=>a.diff-b.diff).filter(x=>x.diff<=22);
+    if(!cand.length) return '';
+    const words = cand.slice(0,2).map(x=>{
+      const meta=dimsMeta.find(d=>d.key===x.k);
+      return x.pv>=50 ? (meta?meta.high:x.k) : (meta?meta.low:x.k);
+    });
+    const mn = masterName.replace(/\(.*\)/,'');
+    return `在「${words.join('、')}」上，你和${mn}几乎重合——`;
+  },
+};
+
+if (typeof window !== 'undefined') window.PERSONA5 = PERSONA5;
+if(typeof window!=='undefined'&&typeof PERSONA5!=='undefined')window.PERSONA5=PERSONA5;
+
+/* ===== data-profile6.js ===== */
+// 投资人格 5 维画像数据层（每个时代一道题，纯测一维）
+// 5 个维度 — 每维 0~100，50 为中性。雷达图：实线=答题人，虚线=匹配大师
+// 作者 小龙虾
+//
+// 维度定义（key / 低分端 ↔ 高分端 / 含义）：
+//  risk     稳健 ↔ 激进     敢冒多大风险博多大回报
+//  data     直觉 ↔ 理性     靠数据逻辑还是靠人/故事/感觉
+//  horizon  短线 ↔ 长期     追当下兑现还是赌长期复利
+//  focus    分散 ↔ 集中     广撒网还是集中重仓
+//  decisive 观望 ↔ 果断     谨慎等待还是机会来了就出手
+//
+// 5 个时代各一题，每题主打一个维度（强信号 +4 / 0 / -4 三档），单维归一化分母取 4。
+
+const PROFILE = {
+  dims: [
+    { key:'risk',     low:'稳健', high:'激进', axis:'风险偏好',
+      lowDesc:'你只投看得懂、算得清的确定性，重视控制回撤，稳扎稳打不冒进。',
+      highDesc:'你敢为还看不清的未来下重注，偏爱高风险高回报，冲在浪潮最前面。' },
+    { key:'data',     low:'直觉', high:'理性', axis:'决策依据',
+      lowDesc:'你会被人、故事和愿景打动，相信伟大的创始人，愿意陪企业穿越低谷。',
+      highDesc:'你冷静地用数字说话，该止损绝不犹豫，对情怀和眼泪免疫。' },
+    { key:'horizon',  low:'短线', high:'长期', axis:'时间视野',
+      lowDesc:'你看重当下的确定兑现，灵活进出，不愿被一笔投资长期套牢。',
+      highDesc:'你愿意为时间的复利耐心等待，相信慢即是快，能拿住好资产很多年。' },
+    { key:'focus',    low:'分散', high:'集中', axis:'下注集中度',
+      lowDesc:'你广撒网、分散风险，不把鸡蛋放在一个篮子里。',
+      highDesc:'你敢于在看准的机会上集中重仓，赢就赢得淋漓尽致。' },
+    { key:'decisive', low:'观望', high:'果断', axis:'行动节奏',
+      lowDesc:'你谨慎、爱观望，宁可错过也要等信息足够清晰再动手。',
+      highDesc:'你雷厉风行，机会窗口一开就果断出手，不在犹豫里错失良机。' },
+  ],
+  // 单维归一化分母（每题单维最强 ±4）
+  norm: 4,
+
+  // 5 道情境题，对应 5 个时代（P1-P5）。每题只打一个主维度，三档清晰（+4/0/-4）。
+  scenarios: {
+    // P1 门户与泡沫(2000-2004) —— 主测 risk 风险偏好
+    P1: { q:'千禧年寒冬，一个项目要你快速决断，但信息远不充分。你的第一反应是——',
+      opts:[
+        { t:'机会难得，敢赌就赢，先果断重注占坑',       e:{risk:4} },
+        { t:'信息不全绝不出手，宁可错过不可做错',       e:{risk:-4} },
+        { t:'小仓试一点，边走边看再加减',             e:{risk:0} },
+      ]},
+    // P2 Web2.0觉醒(2005-2009) —— 主测 data 决策依据(直觉↔理性)
+    P2: { q:'一家公司模式还没跑通，创始人却讲了个让你心潮澎湃的愿景。你——',
+      opts:[
+        { t:'被人和愿景打动，相信伟大的人能创造奇迹',   e:{data:-4} },
+        { t:'愿景再美，没有数据和现金流我绝不碰',     e:{data:4} },
+        { t:'感觉和数据都看一点，综合再判断',         e:{data:0} },
+      ]},
+    // P3 移动互联网(2010-2015) —— 主测 horizon 时间视野(短线↔长期)
+    P3: { q:'移动浪潮汹涌：一个半年能翻倍快进快出，一个要耕耘十年才开花。你更中意——',
+      opts:[
+        { t:'要能快速翻倍变现的，落袋为安最实在',       e:{horizon:-4} },
+        { t:'耕耘十年的大生意，我愿意等时间的复利',     e:{horizon:4} },
+        { t:'长短搭配，既要当下也要未来',             e:{horizon:0} },
+      ]},
+    // P4 硬科技时代(2016-2022) —— 主测 focus 下注集中度(分散↔集中)
+    P4: { q:'硬科技烧钱漫长，手里这笔钱你的下注习惯是——',
+      opts:[
+        { t:'看准一个就集中重仓梭进去，赢个痛快',       e:{focus:4} },
+        { t:'分成多份撒出去，绝不把鸡蛋放一个篮子',     e:{focus:-4} },
+        { t:'主力集中、小仓分散，两手都抓',           e:{focus:0} },
+      ]},
+    // P5 AI新纪元(2023-2026) —— 主测 decisive 行动节奏(观望↔果断)
+    P5: { q:'AI 风口爆发，重大决策关头所有人都说你疯了。你——',
+      opts:[
+        { t:'机会窗口一开就果断出手，绝不犹豫',         e:{decisive:4} },
+        { t:'再等等看，数据和趋势更清晰了才动手',       e:{decisive:-4} },
+        { t:'先小步试水，确认了再加码',               e:{decisive:0} },
+      ]},
+  },
+};
+if(typeof window!=='undefined'&&typeof PROFILE!=='undefined')window.PROFILE=PROFILE;
+
+/* ===== data-masters.js ===== */
+// 投资大师匹配数据层 - 把玩家的 risk/mind 坐标映射到最像的投资大师
+// risk: 稳健(−) ↔ 激进(+)   mind: 理性(−) ↔ 感性(+)
+// 坐标范围 −10~+10，匹配时与玩家坐标统一归一化到 −1~+1
+// 素材来源：全球投资大师图谱（5 流派 16 人）
+// 作者 小龙虾
+
+const MASTERS = {
+  // 流派主题色（卡片配色跟随）
+  schools: {
+    value:     { name:'价值投资派', color:'#2c5282' },
+    growth:    { name:'成长投资派', color:'#3c6b4f' },
+    macro:     { name:'宏观交易派', color:'#b8860b' },
+    quant:     { name:'量化投资派', color:'#5a4b8a' },
+    activist:  { name:'激进/事件驱动派', color:'#b04a3a' },
+    wildcard:  { name:'异类玩家', color:'#a0522d' },
+  },
+  // 大师坐标 + 标签 + 与玩家"对话感"的点评
+  // p6: 5 维画像 [risk,data,horizon,focus,decisive] 各 0~100，用于雷达图虚线 + 6 维匹配
+  list: [
+    { id:'buffett', name:'沃伦·巴菲特', en:'Warren Buffett', emoji:'🎩', school:'value',
+      p6:{risk:15,data:85,horizon:100,focus:95,decisive:40}, tags:'护城河 · 长期主义',
+      blurb:'价值投资之王。你和他都信奉"看得懂才下手"，靠耐心和复利取胜，把好生意攥在手里几十年不撒手——时间，是你们共同的朋友。' },
+    { id:'wood', name:'凯茜·伍德(木头姐)', en:'Cathie Wood', emoji:'🚀', school:'growth',
+      p6:{risk:100,data:70,horizon:70,focus:65,decisive:95}, tags:'颠覆创新 · 押注未来',
+      blurb:'创新投资的旗手。你和她都为"改变世界的未来"全情下注，相信伟大的技术和愿景，敢在别人看不清时冲在最前面——大起大落，从不后悔燃烧。' },
+    { id:'simons', name:'吉姆·西蒙斯', en:'Jim Simons', emoji:'📐', school:'quant',
+      p6:{risk:65,data:100,horizon:10,focus:15,decisive:100}, tags:'数学驱动 · 量化之王',
+      blurb:'量化投资之神。你和他一样对"故事和情怀"完全免疫，只信数据和模型说话——在市场噪音里捞出确定的金子，让数学替你做决定。' },
+    { id:'soros', name:'乔治·索罗斯', en:'George Soros', emoji:'⚡', school:'macro',
+      p6:{risk:80,data:66,horizon:20,focus:88,decisive:89}, tags:'反身性 · 金融大鳄',
+      blurb:'狙击英镑的金融大鳄。你和他一样嗅觉敏锐、心狠手快，敢在所有人恐慌时反向重拳出击，看准了就倾尽全力——这世界的裂缝，就是你的猎场。' },
+    { id:'trumpish', name:'豪赌狂人', en:'The Big Bettor', emoji:'🃏', school:'wildcard',
+      p6:{risk:94,data:35,horizon:34,focus:92,decisive:85}, tags:'极致自信 · 我赌我赢',
+      blurb:'天生的赌场之王。你信自己的直觉胜过一切数据，越多人唱反调你越来劲，看准了就梭哈全部身家——赢了封神，输了？输了也要昂着头说"这是史上最好的交易"。' },
+    { id:'muskish', name:'钢铁狂想家', en:'The Moonshot Maniac', emoji:'🛸', school:'wildcard',
+      p6:{risk:88,data:35,horizon:99,focus:88,decisive:91}, tags:'星辰大海 · 押注疯狂',
+      blurb:'活在未来的偏执狂。别人算 ROI，你算"这能不能改变人类文明"。火星、AI、脑机接口——你押的从来不是公司，是科幻照进现实。要么名垂青史，要么血本无归，中间地带不存在。' },
+  ],
+};
+
+// 5 维匹配：玩家 5 维画像 p6{risk,data,horizon,focus,decisive}（0~100）
+// 与每位大师的 p6 算欧氏距离，最近的即最像
+MASTERS.DIM6 = ['risk','data','horizon','focus','decisive'];
+MASTERS.match = function(p6){
+  const keys = MASTERS.DIM6;
+  const ranked = MASTERS.list.map(m=>{
+    let s=0;
+    for(const k of keys){ const d=(p6[k]||50)-(m.p6?m.p6[k]:50); s+=d*d; }
+    return { m, d: Math.sqrt(s) };
+  }).sort((a,b)=> a.d - b.d);
+  // 相似度:最大距离 sqrt(5*100^2)=223.6,映射为 0~100% 百分比
+  const MAXD=Math.sqrt(5*100*100);
+  const pct=Math.round((1-ranked[0].d/MAXD)*100);
+  return {
+    best: ranked[0].m,
+    bestPct: Math.max(0,Math.min(100,pct)),
+    others: ranked.slice(1, 3).map(x=>x.m),   // 次相似 2 位
+    school: MASTERS.schools[ranked[0].m.school],
+  };
+};
+if(typeof window!=='undefined'&&typeof MASTERS!=='undefined')window.MASTERS=MASTERS;
