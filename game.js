@@ -868,13 +868,28 @@ function renderMBTI(){
       ${legend}
     </div>
     <div class="p6-list">${dimList}</div>`;
-  // 画雷达图(canvas 需在 DOM 后绘制)。首次展示走入场动画,回看/截图直接终态
+  // 画雷达图(canvas 需在 DOM 后绘制)。结局页很长,雷达在下方——必须滚进视口才播动画,
+  // 否则用户滑到时早动完了(只见终态)。先画终态兜底(防截图/不支持IO时空白),进视口再从0重播。
   const cv = document.getElementById('radarCanvas');
   if(cv && typeof PROFILE!=='undefined'){
-    requestAnimationFrame(()=>animateRadar(cv, ps, b?b.p6:null, accent));
+    requestAnimationFrame(()=>drawRadar(cv, ps, b?b.p6:null, accent, 1)); // 终态兜底
+    whenVisible(cv, ()=>animateRadar(cv, ps, b?b.p6:null, accent));        // 进视口播放
   }
-  // 五维人格数值条(p6) count-up:宽度从0滚到目标
-  countUpBars(el);
+  // 五维人格数值条(p6) count-up:同样进视口才滚
+  whenVisible(el.querySelector('.p6-list')||el, ()=>countUpBars(el));
+}
+
+// 元素首次滚进视口时触发一次 cb(不支持 IntersectionObserver 则立即执行)
+function whenVisible(target, cb){
+  if(!target){ cb(); return; }
+  if(typeof IntersectionObserver==='undefined'){ cb(); return; }
+  var fired=false;
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting && !fired){ fired=true; io.disconnect(); cb(); }
+    });
+  }, { threshold:0.35 });  // 露出35%才算"看到了"
+  io.observe(target);
 }
 
 // 雷达入场动画:数据多边形从中心弹性展开(~700ms cubicOut),尊重reduce-motion
