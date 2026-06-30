@@ -812,6 +812,20 @@ function drawRadar(canvas, playerScores, masterScores, accent, progress){
   // 先画大师(虚线) 再画玩家(实线在上)；两者同色(流派色),靠线型区分:你=实线、大师=虚线
   if(masterScores) poly(masterScores, accent, true, false);
   poly(playerScores, accent, false, true);
+  // 存下玩家各顶点的"CSS像素坐标"+维度信息,供 hover tooltip 命中检测(动画终态时记一次)
+  if(prog>=1){
+    var verts=[];
+    for(let i=0;i<n;i++){
+      const ang=-Math.PI/2 + i*2*Math.PI/n;
+      const pv=(playerScores[dims[i].key]!=null?playerScores[dims[i].key]:50);
+      const v=pv/100;
+      verts.push({ x:cx+R*v*Math.cos(ang), y:cy+R*v*Math.sin(ang),
+        axis:dims[i].axis, val:Math.round(pv),
+        master:(masterScores&&masterScores[dims[i].key]!=null)?Math.round(masterScores[dims[i].key]):null });
+    }
+    canvas.__radarVerts=verts;            // CSS px(因ctx.scale过dpr,这里用逻辑坐标=CSS px)
+    canvas.__radarAccent=accent;
+  }
 }
 
 function renderMBTI(){
@@ -865,6 +879,7 @@ function renderMBTI(){
     <div class="sc-sub-head"><span class="sh-emoji">📊</span>五维人格对比<span class="sh-emoji">📊</span></div>
     <div class="radar-wrap">
       <canvas id="radarCanvas" class="radar-canvas"></canvas>
+      <div id="radarTip" class="radar-tip"></div>
       ${legend}
     </div>
     <div class="p6-list">${dimList}</div>`;
@@ -874,22 +889,63 @@ function renderMBTI(){
   if(cv && typeof PROFILE!=='undefined'){
     requestAnimationFrame(()=>drawRadar(cv, ps, b?b.p6:null, accent, 1)); // 终态兜底
     whenVisible(cv, ()=>animateRadar(cv, ps, b?b.p6:null, accent));        // 进视口播放
+    setupRadarHover(cv);                                                   // 鼠标划过顶点显数值
   }
   // 五维人格数值条(p6) count-up:同样进视口才滚
   whenVisible(el.querySelector('.p6-list')||el, ()=>countUpBars(el));
 }
 
-// 元素首次滚进视口时触发一次 cb(不支持 IntersectionObserver 则立即执行)
+// 元素滚进视口时触发 cb。默认每次进入都触发(完全离开视口后再进来可重播);
+// 不支持 IntersectionObserver 则立即执行一次。
 function whenVisible(target, cb){
   if(!target){ cb(); return; }
   if(typeof IntersectionObserver==='undefined'){ cb(); return; }
-  var fired=false;
+  var inside=false;
   var io=new IntersectionObserver(function(entries){
     entries.forEach(function(e){
-      if(e.isIntersecting && !fired){ fired=true; io.disconnect(); cb(); }
+      if(e.isIntersecting){
+        if(!inside){ inside=true; cb(); }   // 进入(之前在外面)→播一次
+      } else {
+        inside=false;                        // 完全离开→武装下次重播
+      }
     });
-  }, { threshold:0.35 });  // 露出35%才算"看到了"
+  }, { threshold:0.35 });  // 露出35%才算"看到了",完全移出才 reset
   io.observe(target);
+}
+
+// 雷达 hover/触摸:指针靠近某顶点时,浮出该维"名称+你的分/大师分"小气泡(命中圆点~26px内)
+function setupRadarHover(canvas){
+  var tip=document.getElementById('radarTip'); if(!tip)return;
+  function locate(clientX, clientY){
+    var verts=canvas.__radarVerts; if(!verts)return null;
+    var rect=canvas.getBoundingClientRect();
+    var scale=rect.width/(canvas.clientWidth||rect.width); // CSS缩放比(canvas样式宽 vs 实际渲染宽,一般=1)
+    var px=(clientX-rect.left), py=(clientY-rect.top);
+    // verts是CSS px坐标,但canvas样式width可能≠绘制W;按rect等比换算
+    var fx=px/rect.width*(canvas.clientWidth||rect.width);
+    var fy=py/rect.height*(canvas.clientHeight||rect.height);
+    var best=null,bd=1e9;
+    verts.forEach(function(v){var d=Math.hypot(v.x-fx,v.y-fy);if(d<bd){bd=d;best=v;}});
+    return (best&&bd<=26)?{v:best,px:px,py:py}:null;
+  }
+  function show(hit){
+    var v=hit.v, ac=canvas.__radarAccent||'#b8860b';
+    tip.innerHTML='<span class="rt-axis">'+v.axis+'</span>'+
+      '<span class="rt-you" style="color:'+ac+'">你 '+v.val+'</span>'+
+      (v.master!=null?'<span class="rt-mt">大师 '+v.master+'</span>':'');
+    // 定位在顶点上方(气泡相对 radar-wrap 定位)
+    tip.style.left=hit.px+'px';
+    tip.style.top=(hit.py-12)+'px';
+    tip.classList.add('show');
+  }
+  function hide(){ tip.classList.remove('show'); }
+  canvas.addEventListener('mousemove',function(e){var h=locate(e.clientX,e.clientY);h?show(h):hide();});
+  canvas.addEventListener('mouseleave',hide);
+  // 触屏:点一下顶点也能看(手机用户)
+  canvas.addEventListener('touchstart',function(e){
+    if(!e.touches[0])return; var t=e.touches[0]; var h=locate(t.clientX,t.clientY);
+    if(h){ show(h); setTimeout(hide,1800); }
+  },{passive:true});
 }
 
 // 雷达入场动画:数据多边形从中心弹性展开(~700ms cubicOut),尊重reduce-motion
