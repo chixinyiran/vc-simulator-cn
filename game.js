@@ -846,7 +846,8 @@ function renderMBTI(){
   const dimList = (typeof PROFILE==='undefined') ? '' : PROFILE.dims.map(d=>{
     const v = ps[d.key];
     const label = v>=58?d.high : (v<=42?d.low : '均衡');
-    return `<div class="p6-row"><span class="p6-axis">${d.axis}</span><div class="p6-bar"><i style="width:${v}%"></i></div><span class="p6-val">${label}</span></div>`;
+    const mv = (b&&b.p6&&b.p6[d.key]!=null) ? Math.round(b.p6[d.key]) : '';  // 大师分(用于hover)
+    return `<div class="p6-row" data-axis="${d.axis}" data-you="${Math.round(v)}" data-mt="${mv}"><span class="p6-axis">${d.axis}</span><div class="p6-bar"><i style="width:${v}%"></i></div><span class="p6-val">${label}</span></div>`;
   }).join('');
 
   let masterHTML='';
@@ -882,15 +883,17 @@ function renderMBTI(){
       <div id="radarTip" class="radar-tip"></div>
       ${legend}
     </div>
-    <div class="p6-list">${dimList}</div>`;
+    <div class="p6-list">${dimList}<div id="p6Tip" class="radar-tip"></div></div>`;
   // 画雷达图(canvas 需在 DOM 后绘制)。结局页很长,雷达在下方——必须滚进视口才播动画,
   // 否则用户滑到时早动完了(只见终态)。先画终态兜底(防截图/不支持IO时空白),进视口再从0重播。
   const cv = document.getElementById('radarCanvas');
   if(cv && typeof PROFILE!=='undefined'){
+    cv.__radarParams={ps:ps, mp:(b?b.p6:null), accent:accent};  // 存渲染参数,供截图前结算到终态
     requestAnimationFrame(()=>drawRadar(cv, ps, b?b.p6:null, accent, 1)); // 终态兜底
     whenVisible(cv, ()=>animateRadar(cv, ps, b?b.p6:null, accent));        // 进视口播放
     setupRadarHover(cv);                                                   // 鼠标划过顶点显数值
   }
+  setupP6Hover(el, accent);  // 雷达下方五维条:hover显示你的分/大师分
   // 五维人格数值条(p6) count-up:同样进视口才滚
   whenVisible(el.querySelector('.p6-list')||el, ()=>countUpBars(el));
 }
@@ -948,6 +951,31 @@ function setupRadarHover(canvas){
   },{passive:true});
 }
 
+// 雷达下方五维条 hover/触摸:浮出该维"你的分/大师分"气泡(复用 .radar-tip 样式)
+function setupP6Hover(scope, accent){
+  var tip=scope.querySelector('#p6Tip'); if(!tip)return;
+  var rows=scope.querySelectorAll('.p6-row');
+  function show(row){
+    var ac=accent||'#b8860b';
+    var you=row.getAttribute('data-you'), mt=row.getAttribute('data-mt'), axis=row.getAttribute('data-axis');
+    tip.innerHTML='<span class="rt-axis">'+axis+'</span>'+
+      '<span class="rt-you" style="color:'+ac+'">你 '+you+'</span>'+
+      ((mt!=='' && mt!=null)?'<span class="rt-mt">大师 '+mt+'</span>':'');
+    // 气泡定位到该行上方中部(相对 p6-list)
+    var lr=scope.querySelector('.p6-list').getBoundingClientRect();
+    var rr=row.getBoundingClientRect();
+    tip.style.left=(rr.left-lr.left+rr.width/2)+'px';
+    tip.style.top=(rr.top-lr.top)+'px';
+    tip.classList.add('show');
+  }
+  function hide(){ tip.classList.remove('show'); }
+  Array.prototype.forEach.call(rows,function(row){
+    row.addEventListener('mouseenter',function(){show(row);});
+    row.addEventListener('mouseleave',hide);
+    row.addEventListener('touchstart',function(){ show(row); setTimeout(hide,1800); },{passive:true});
+  });
+}
+
 // 雷达入场动画:数据多边形从中心弹性展开(~700ms cubicOut),尊重reduce-motion
 function animateRadar(canvas, ps, mp, accent){
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -977,12 +1005,32 @@ function countUpBars(root){
   });
 }
 
+// 截图前结算:把进行中的入场动画立刻拉到终态,避免 html2canvas 截到半截雷达/归零数值条
+function settleEndingVisuals(){
+  // 1) 雷达:用存的参数重画到 progress=1(终态)
+  try{
+    var cv=document.getElementById('radarCanvas');
+    if(cv && cv.__radarParams && typeof drawRadar==='function'){
+      var pr=cv.__radarParams; drawRadar(cv, pr.ps, pr.mp, pr.accent, 1);
+    }
+  }catch(e){}
+  // 2) 五维数值条:若被 countUpBars 归零/动画中,直接设回目标宽(--w),并去掉过渡立即生效
+  try{
+    var bars=document.querySelectorAll('.p6-bar i');
+    Array.prototype.forEach.call(bars,function(b){
+      var target=b.style.getPropertyValue('--w');
+      if(target){ b.style.transition='none'; b.style.width=target; }
+    });
+  }catch(e){}
+}
+
 function toast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),ms||2200);}
 function genImage(){
   if(window._genImaging) return;  // 重入锁:截图进行中再点直接忽略,防止连点导致明细块被永久隐藏
   if(typeof html2canvas==='undefined'){ toast(CONFIG.text.genImageFail||'截图库未就绪，请稍后再试',3000); return; }  // H3:库未加载完(慢网首次)直接提示,不抛错
   window._genImaging=true;
   if(window.Sfx)Sfx.play('click');
+  settleEndingVisuals();  // 截图前先把进行中的入场动画结算到终态(否则截到半截雷达/归零数值条)
   const card=document.getElementById('shareCard');
   // 截图前临时隐藏「二十六年投资轨迹」明细块(页面仍显示,只是不进截图,避免截图过长)
   // 截图时隐藏整个章节叁(章节标题+轨迹明细)，页面仍显示,仅不进截图避免太长
