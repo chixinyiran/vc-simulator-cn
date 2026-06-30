@@ -214,7 +214,7 @@
 <body>
 <div id="authGate">
   <div class="agt">🔐 后台管理</div>
-  <div class="ags">玩家数据 · 数值机制 · 实时调参 · 文案音效，一处尽览</div>
+  <div class="ags">玩家数据 · 数值机制 · 实时调参 · 文案配置，一处尽览</div>
   <input id="authPin" type="password" inputmode="numeric" placeholder="输入口令开门" autocomplete="off">
   <button id="authBtn">进入</button>
   <div id="authErr"></div>
@@ -232,7 +232,7 @@
     <div class="tab on" data-p="stats">📊 玩家数据</div>
     <div class="tab" data-p="doc">🧮 数值机制</div>
     <div class="tab" data-p="tune">🎛 实时调参</div>
-    <div class="tab" data-p="cfg">📝 文案音效</div>
+    <div class="tab" data-p="cfg">📝 文案配置</div>
   </div>
 
   <!-- 📊 数据统计 -->
@@ -272,10 +272,10 @@
   <div class="footer"><span style="white-space:nowrap">🦞 小龙虾出品</span> · 所有数值实时读自游戏真实配置，所见即所玩</div>
 </div>
 
-<script src="config.js?v=20260630admin40"></script>
-<script src="data-bundle.js?v=20260630admin40"></script>
+<script src="config.js?v=20260630admin41"></script>
+<script src="data-bundle.js?v=20260630admin41"></script>
 <script>window.__NO_AUTO_AUDIO__=true;/*后台禁用全局音频自动解锁,避免iOS点空白处触发"播放动作";试听由row.onclick主动Sfx.unlock*/</script>
-<script src="engine.js?v=20260630admin40"></script>
+<script src="engine.js?v=20260630admin41"></script>
 <script>
 "use strict";
 /* ===================== 公共 ===================== */
@@ -1068,7 +1068,7 @@ function makeMusicRow(file,label,ds){
     if(bgmPlaying===row){ stopBgm(); return; }
     stopBgm();
     if(!bgmAudio){ bgmAudio=new Audio(); bgmAudio.loop=true; bgmAudio.volume=0.7; }
-    bgmAudio.src='audio/'+file+'?v=20260630admin40';
+    bgmAudio.src='audio/'+file+'?v=20260630admin41';
     bgmAudio.play().catch(()=>{});
     row.classList.add('playing'); bgmPlaying=row;
   }catch(e){} };
@@ -1088,7 +1088,7 @@ musicGroup('🎵 时代背景音乐 · 5 时代各一首','','游戏实际播放
 
 
 }
-/* 注:后台不主动全局解锁音频。音频仅在用户主动点“文案音效” tab 的试听行时解锁(见 row.onclick 内 Sfx.unlock),避免点击其他区域(如玩家数据饼图)触发音频上下文产生声音 */
+/* 注:后台不主动全局解锁音频。音频仅在用户主动点“数值机制” tab 的音效试听行时解锁(见 row.onclick 内 Sfx.unlock),避免点击其他区域(如玩家数据饼图)触发音频上下文产生声音 */
 
 </script>
 </body>
